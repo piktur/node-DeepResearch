@@ -133,3 +133,5 @@ dist
 feature/
 tmp/
 .aider*
+
+test-context/

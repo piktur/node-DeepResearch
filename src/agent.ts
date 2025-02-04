@@ -788,7 +788,7 @@ async function storeContext(
   outDir: string = OUT_DIR,
 ) {
   try {
-    fs.mkdir(outDir, { recursive: true });
+    await fs.mkdir(outDir, { recursive: true });
     await fs.writeFile(
       path.join(outDir, `prompt-${recursionLevel}-${step}.txt`),
       prompt,
