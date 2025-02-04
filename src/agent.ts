@@ -486,6 +486,7 @@ Although you solved a sub-question, you still need to find the answer to the ori
             maxBadAttempts,
             subContext,
             allKnowledge,  // Pass current knowledge to sub-question
+            budgetSplitRatio,
             recursionLevel + 1
           );
 
