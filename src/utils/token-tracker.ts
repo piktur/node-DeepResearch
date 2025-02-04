@@ -15,7 +15,7 @@ export class TokenTracker extends EventEmitter {
     const currentTotal = this.getTotalUsage();
     if (this.budget && currentTotal + tokens > this.budget) {
       // Instead of adding tokens and then throwing, we'll throw before adding
-      throw new Error(`Token budget exceeded: ${currentTotal + tokens} > ${this.budget}`);
+      console.error(`Token budget exceeded: ${currentTotal + tokens} > ${this.budget}`);
     }
     // Only track usage if we're within budget
     if (!this.budget || currentTotal + tokens <= this.budget) {
