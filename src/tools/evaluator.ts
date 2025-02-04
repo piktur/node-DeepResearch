@@ -69,35 +69,34 @@ export async function evaluateAnswer(
   answer: string,
   tracker?: TokenTracker,
 ): Promise<{ response: EvaluationResponse; tokens: number }> {
-  let retries = 3;
   let delay = 1000; // Initial delay in milliseconds
 
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const prompt = getPrompt(question, answer);
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const usage = response.usageMetadata;
-      const json = JSON.parse(response.text()) as EvaluationResponse;
-      console.log("Evaluation:", {
-        definitive: json.is_definitive,
-        reason: json.reasoning,
-      });
-      const tokens = usage?.totalTokenCount || 0;
-      (tracker || new TokenTracker()).trackUsage("evaluator", tokens);
-      return { response: json, tokens };
-    } catch (error) {
-      if (error instanceof GoogleGenerativeAIFetchError && error.status === 429 && i < retries) {
-        console.warn(
-          `Rate limit encountered, retrying in ${delay / 1000} seconds...`,
-          `Attempt ${i + 1} of ${retries + 1}`,
-        );
-        await sleep(delay);
-        delay *= 2; // Exponential backoff
-      } else {
-        console.error("Error in answer evaluation:", error);
-        throw error; // Re-throw the error for non-429 errors or after max retries
-      }
+  try {
+    const prompt = getPrompt(question, answer);
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const usage = response.usageMetadata;
+    const json = JSON.parse(response.text()) as EvaluationResponse;
+    console.log("Evaluation:", {
+      definitive: json.is_definitive,
+      reason: json.reasoning,
+    });
+    const tokens = usage?.totalTokenCount || 0;
+    (tracker || new TokenTracker()).trackUsage("evaluator", tokens);
+    return { response: json, tokens };
+  } catch (error: any) {
+    if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
+      console.warn(
+        `Rate limit encountered, retrying in ${delay / 1000} seconds...`,
+        `Attempt 2 of 2`,
+      );
+      await sleep(delay);
+      delay *= 2; // Exponential backoff
+      // Retry once
+      return await evaluateAnswer(question, answer, tracker);
+    } else {
+      console.error("Error in answer evaluation:", error);
+      throw error; // Re-throw the error for non-429 errors
     }
   }
   throw new Error(
