@@ -466,17 +466,13 @@ Although you solved a sub-question, you still need to find the answer to the ori
           // Log the budget allocation for monitoring
           console.log(`Allocating ${subQuestionBudget} tokens for sub-question: "${gapQuestion}"`)
 
-          const subContext = {
-            tokenTracker: context.tokenTracker,  // Share token tracker
-            actionTracker: context.actionTracker // Share action tracker
-          };
 
           // Recursively resolve gap question
           const {result: gapResult} = await getResponse(
             gapQuestion,
             subQuestionBudget,
             maxBadAttempts,
-            subContext,
+            undefined,
             allKnowledge,  // Pass current knowledge to sub-question
             budgetSplitRatio,
             recursionLevel + 1
