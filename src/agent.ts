@@ -286,11 +286,10 @@ export async function getResponse(question: string, tokenBudget: number = 1_000_
     step++;
     totalStep++;
     context.actionTracker.trackAction({totalStep, thisStep, gaps, badAttempts});
-    const budgetPercentage = (context.tokenTracker.getTotalUsage() / tokenBudget * 100).toFixed(2);
-    console.log(`| Recursion ${recursionLevel} | Step ${totalStep} | Budget used ${budgetPercentage}% |`);
-    console.log('Gaps:', gaps);
-    allowReflect = allowReflect && (gaps.length <= 1);
-    const currentQuestion = gaps.length > 0 ? gaps.shift()! : question;
+    const budgetPercentage = (context.tokenTracker.getTotalUsage() / tokenBudget * 100).toFixed(0);
+    const currentQuestion = question
+    console.log(`| Recursion ${recursionLevel} | Step ${totalStep} | Token Budget ${tokenBudget} | Budget Used: ${budgetPercentage}% | Q: ${currentQuestion} |`);
+
     // update all urls with buildURLMap
     allowRead = allowRead && (Object.keys(allURLs).length > 0);
     allowSearch = allowSearch && (Object.keys(allURLs).length < 20);  // disable search when too many urls already
