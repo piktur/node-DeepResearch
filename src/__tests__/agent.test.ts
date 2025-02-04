@@ -2,6 +2,8 @@ import path from 'path';
 import { getResponse } from '../agent';
 
 // Mock console.log to prevent cluttering test output
+const storeContextMock = jest.fn();
+jest.mock('../agent', () => ({ ...jest.requireActual('../agent'), storeContext: storeContextMock }));
 jest.spyOn(console, 'log').mockImplementation(() => {});
 
 describe('Agent Functionality', () => {
@@ -41,4 +43,15 @@ describe('Agent Functionality', () => {
     expect(result2.action).toBe('answer');
     expect(typeof result2.answer).toBe('string');
   }, 60000); // Increased timeout for potentially longer test
+
+  it('should use the provided contextPath for storing context files', async () => {
+    const question = 'What is the weather like today?';
+    const contextPath = path.join(__dirname, 'custom-context-path');
+    await getResponse(question, undefined, undefined, undefined, undefined, undefined, contextPath);
+
+    expect(storeContextMock).toHaveBeenCalled();
+    const mockContextPathArg = storeContextMock.mock.calls[0][0];
+    expect(mockContextPathArg).toBe(contextPath);
+  }, 30000);
+
 });
