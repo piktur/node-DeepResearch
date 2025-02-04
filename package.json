@@ -4,12 +4,12 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "npx ts-node src/agent.ts",
-    "search": "npx ts-node src/test-duck.ts",
-    "rewrite": "npx ts-node src/tools/query-rewriter.ts",
+    "dev": "node --experimental-strip-types src/agent.ts",
+    "search": "node --experimental-strip-types src/test-duck.ts",
+    "rewrite": "node --experimental-strip-types src/tools/query-rewriter.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "serve": "ts-node src/server.ts",
+    "serve": "node --experimental-strip-types src/server.ts",
     "test": "jest",
     "test:watch": "jest --watch"
   },
@@ -17,6 +17,10 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "type": "module",
+  "imports": {
+    "#src/*.js": "./src/*.ts"
+  },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "@types/cors": "^2.8.17",

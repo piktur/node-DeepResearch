@@ -1,4 +1,4 @@
-import { dedupQueries } from "../dedup";
+import { dedupQueries } from "#src/dedup.js";
 
 describe("dedupQueries", () => {
   it("should remove duplicate queries", async () => {

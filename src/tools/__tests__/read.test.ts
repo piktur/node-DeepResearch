@@ -1,5 +1,5 @@
-import { readUrl } from "../read";
-import { TokenTracker } from "../../utils/token-tracker";
+import { readUrl } from "#src/read.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
 
 describe("readUrl", () => {
   it.skip("should read and parse URL content (skipped due to insufficient balance)", async () => {

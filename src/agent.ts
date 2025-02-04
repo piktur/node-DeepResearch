@@ -1,7 +1,3 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { SafeSearchType, search as duckSearch } from "duck-duck-scrape";
-import fs from "node:fs/promises";
-import path from "node:path";
 import {
   DEFAULT_BUDGET_SPLIT_RATIO,
   GEMINI_API_KEY,
@@ -10,22 +6,26 @@ import {
   SEARCH_PROVIDER,
   STEP_SLEEP,
   modelConfigs,
-} from "./config";
-import { braveSearch } from "./tools/brave-search";
-import { dedupQueries } from "./tools/dedup";
-import { analyzeSteps } from "./tools/error-analyzer";
-import { evaluateAnswer } from "./tools/evaluator";
-import { rewriteQuery } from "./tools/query-rewriter";
-import { readUrl } from "./tools/read";
-import {
+} from "#src/config.js";
+import { braveSearch } from "#src/tools/brave-search.js";
+import { dedupQueries } from "#src/tools/dedup.js";
+import { analyzeSteps } from "#src/tools/error-analyzer.js";
+import { evaluateAnswer } from "#src/tools/evaluator.js";
+import { rewriteQuery } from "#src/tools/query-rewriter.js";
+import { readUrl } from "#src/tools/read.js";
+import type {
   AnswerAction,
   ResponseSchema,
   SchemaProperty,
   StepAction,
   TrackerContext,
-} from "./types";
-import { ActionTracker } from "./utils/action-tracker";
-import { TokenTracker } from "./utils/token-tracker";
+} from "#src/types.js";
+import { ActionTracker } from "#src/utils/action-tracker.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { SafeSearchType, search as duckSearch } from "duck-duck-scrape";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 const OUT_DIR = `/tmp/${Date.now()}`;
 
@@ -822,12 +822,19 @@ export async function main() {
   const outDir = `/tmp/${Date.now()}`;
   const { result: finalStep, context: tracker } = (await getResponse(
     question,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    outDir
   )) as { result: AnswerAction; context: TrackerContext };
   console.log("Final Answer:", finalStep.answer);
 
   tracker.tokenTracker.printSummary();
 }
 
-if (require.main === module) {
+// if (import.meta.main) {
   main().catch(console.error);
-}
+// }

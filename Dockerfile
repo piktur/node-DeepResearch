@@ -2,8 +2,10 @@ FROM node:alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN pnpm install --frozen-lockfile --production
+COPY package*.json pnpm-lock.yaml ./
+
+RUN corepack enable && \
+    pnpm install --frozen-lockfile --production
 
 COPY . .
 

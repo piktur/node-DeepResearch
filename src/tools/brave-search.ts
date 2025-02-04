@@ -1,7 +1,6 @@
+import { BRAVE_API_KEY } from "#src/config.js";
+import type { BraveSearchResponse } from "#src/types.js";
 import axios from "axios";
-import { BRAVE_API_KEY } from "../config";
-
-import { BraveSearchResponse } from "../types";
 
 export async function braveSearch(
   query: string,

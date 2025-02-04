@@ -1,4 +1,4 @@
-import { rewriteQuery } from "../query-rewriter";
+import { rewriteQuery } from "#src/query-rewriter.js";
 
 describe("rewriteQuery", () => {
   it("should rewrite search query", async () => {

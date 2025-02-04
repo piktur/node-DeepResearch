@@ -1,6 +1,6 @@
+import { getResponse } from "#src/agent.js";
 import fs from 'node:fs/promises';
 import path from "path";
-import { getResponse } from "../agent";
 
 jest.spyOn(console, "log").mockImplementation(() => {});
 jest.mock('node:fs/promises')

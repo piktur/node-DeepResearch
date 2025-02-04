@@ -1,4 +1,4 @@
-import { analyzeSteps } from "../error-analyzer";
+import { analyzeSteps } from "#src/error-analyzer.js";
 
 describe("analyzeSteps", () => {
   it("should analyze error steps", async () => {

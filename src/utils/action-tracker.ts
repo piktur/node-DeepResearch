@@ -1,5 +1,5 @@
-import { EventEmitter } from "events";
-import { StepAction } from "../types";
+import type { StepAction } from "#src/types.js";
+import { EventEmitter } from "node:events";
 
 interface ActionState {
   thisStep: StepAction;

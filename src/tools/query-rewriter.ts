@@ -1,9 +1,7 @@
+import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
+import type { KeywordsResponse, SearchAction } from "#src/types.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { GEMINI_API_KEY, modelConfigs } from "../config";
-import { TokenTracker } from "../utils/token-tracker";
-import { SearchAction } from "../types";
-
-import { KeywordsResponse } from "../types";
 
 const responseSchema = {
   type: SchemaType.OBJECT,

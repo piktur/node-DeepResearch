@@ -1,4 +1,4 @@
-import { braveSearch } from "../brave-search";
+import { braveSearch } from "#src/brave-search.js";
 
 describe("braveSearch", () => {
   it("should return search results", async () => {

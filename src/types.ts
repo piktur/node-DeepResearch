@@ -1,4 +1,4 @@
-import { SchemaType } from "@google/generative-ai";
+import type { SchemaType } from "@google/generative-ai";
 
 // Action Types
 type BaseAction = {
@@ -157,8 +157,8 @@ export interface StreamMessage {
 }
 
 // Tracker Types
-import { TokenTracker } from "./utils/token-tracker";
-import { ActionTracker } from "./utils/action-tracker";
+import { ActionTracker } from "#src/utils/action-tracker.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
 
 export interface TrackerContext {
   tokenTracker: TokenTracker;

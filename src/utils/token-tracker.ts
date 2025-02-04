@@ -1,6 +1,5 @@
+import type { TokenUsage } from "#src/types.js";
 import { EventEmitter } from "events";
-
-import { TokenUsage } from "../types";
 
 export class TokenTracker extends EventEmitter {
   private usages: TokenUsage[] = [];

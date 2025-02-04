@@ -1,8 +1,7 @@
+import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
+import type { DedupResponse } from "#src/types.js";
+import type { TokenTracker } from "#src/utils/token-tracker.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { GEMINI_API_KEY, modelConfigs } from "../config";
-import { TokenTracker } from "../utils/token-tracker";
-
-import { DedupResponse } from "../types";
 
 const responseSchema = {
   type: SchemaType.OBJECT,
@@ -143,6 +142,6 @@ export async function main() {
   }
 }
 
-if (require.main === module) {
+if (import.meta.main) {
   main().catch(console.error);
 }

@@ -1,8 +1,7 @@
+import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
+import type { EvaluationResponse } from "#src/types.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { GEMINI_API_KEY, modelConfigs } from "../config";
-import { TokenTracker } from "../utils/token-tracker";
-
-import { EvaluationResponse } from "../types";
 
 const responseSchema = {
   type: SchemaType.OBJECT,
@@ -107,6 +106,6 @@ async function main() {
   }
 }
 
-if (require.main === module) {
+if (import.meta.main) {
   main().catch(console.error);
 }

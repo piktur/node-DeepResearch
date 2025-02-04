@@ -1,7 +1,6 @@
-import https from "https";
-import { TokenTracker } from "../utils/token-tracker";
-
-import { SearchResponse } from "../types";
+import type { SearchResponse } from "#src/types.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
+import https from "node:https";
 
 export function search(
   query: string,

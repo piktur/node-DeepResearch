@@ -14,49 +14,43 @@ export GEMINI_API_KEY=...  # for gemini api, ask han
 export JINA_API_KEY=jina_...  # free jina api key, get from https://jina.ai/reader
 export BRAVE_API_KEY=...  # (optional, when not given it uses duckduckgo) brave search provide free key, ask han
 
-git clone https://github.com/jina-ai/node-DeepResearch.git
+git clone https://github.com/piktur/node-DeepResearch.git
 cd node-DeepResearch
-npm install
-```
-
-## Build
-
-```sh
-docker build -t deepresearch .
+pnpm install
 ```
 
 ## Run
 
 ```sh
-docker compose run -it --rm deepresearch npm run dev "1+1="
+docker compose run -it --rm api pnpm run dev "1+1="
 ```
 
 ## Examples
 
 ```
 # example: no tool calling
-npm run dev "1+1="
-npm run dev "what is the capital of France?"
+pnpm run dev "1+1="
+pnpm run dev "what is the capital of France?"
 
 # example: 2-step
-npm run dev "what is the latest news from Jina AI?"
+pnpm run dev "what is the latest news from Jina AI?"
 
 # example: 3-step
-npm run dev "what is the twitter account of jina ai's founder"
+pnpm run dev "what is the twitter account of jina ai's founder"
 
 # example: 13-step, ambiguious question (no def of "big")
-npm run dev "who is bigger? cohere, jina ai, voyage?"
+pnpm run dev "who is bigger? cohere, jina ai, voyage?"
 
 # example: open question, research-like, long chain of thoughts
-npm run dev "who will be president of US in 2028?"
-npm run dev "what should be jina ai strategy for 2025?"
+pnpm run dev "who will be president of US in 2028?"
+pnpm run dev "what should be jina ai strategy for 2025?"
 ```
 
 ## Web Server API
 
 Start the server:
 ```bash
-npm run serve
+pnpm run serve
 ```
 
 The server will start on http://localhost:3000 with the following endpoints:

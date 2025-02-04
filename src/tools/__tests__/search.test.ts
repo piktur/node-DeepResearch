@@ -1,5 +1,5 @@
-import { search } from "../search";
-import { TokenTracker } from "../../utils/token-tracker";
+import { search } from "#src/search.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
 
 describe("search", () => {
   it.skip("should perform search with Jina API (skipped due to insufficient balance)", async () => {

@@ -1,5 +1,5 @@
-import { evaluateAnswer } from "../evaluator";
-import { TokenTracker } from "../../utils/token-tracker";
+import { evaluateAnswer } from "#src/evaluator.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
 
 describe("evaluateAnswer", () => {
   it("should evaluate answer definitiveness", async () => {
