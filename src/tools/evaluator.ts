@@ -68,8 +68,14 @@ export async function evaluateAnswer(
   question: string,
   answer: string,
   tracker?: TokenTracker,
+  delay: number = 5_000,
+  attempt: number = 0
 ): Promise<{ response: EvaluationResponse; tokens: number }> {
-  let delay = 1000; // Initial delay in milliseconds
+  const maxRetries = 3
+
+  if ((attempt + 1) > maxRetries) {
+    throw new Error("Rate limit exceeded. Failed to evaluate answer.");
+  }
 
   try {
     const prompt = getPrompt(question, answer);
@@ -77,31 +83,29 @@ export async function evaluateAnswer(
     const response = await result.response;
     const usage = response.usageMetadata;
     const json = JSON.parse(response.text()) as EvaluationResponse;
+
     console.log("Evaluation:", {
       definitive: json.is_definitive,
       reason: json.reasoning,
     });
+
     const tokens = usage?.totalTokenCount || 0;
     (tracker || new TokenTracker()).trackUsage("evaluator", tokens);
+
     return { response: json, tokens };
   } catch (error: any) {
     if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
       console.warn(
         `Rate limit encountered, retrying in ${delay / 1000} seconds...`,
-        `Attempt 2 of 2`,
+        `Attempt ${attempt + 1} of ${maxRetries}`,
       );
       await sleep(delay);
-      delay *= 2; // Exponential backoff
-      // Retry once
-      return await evaluateAnswer(question, answer, tracker);
+
+      return await evaluateAnswer(question, answer, tracker, delay * attempt, attempt + 1);
     } else {
-      console.error("Error in answer evaluation:", error);
-      throw error; // Re-throw the error for non-429 errors
+      throw error;
     }
   }
-  throw new Error(
-    "Failed to evaluate answer after multiple retries due to rate limiting.",
-  ); // If loop completes without returning, all retries failed
 }
 
 // Example usage
