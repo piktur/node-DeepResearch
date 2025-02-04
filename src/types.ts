@@ -30,7 +30,11 @@ export type VisitAction = BaseAction & {
   URLTargets: string[];
 };
 
-export type StepAction = SearchAction | AnswerAction | ReflectAction | VisitAction;
+export type StepAction =
+  | SearchAction
+  | AnswerAction
+  | ReflectAction
+  | VisitAction;
 
 // Response Types
 export interface TokenUsage {
@@ -46,7 +50,7 @@ export interface SearchResponse {
     description: string;
     url: string;
     content: string;
-    usage: { tokens: number; };
+    usage: { tokens: number };
   }> | null;
   name?: string;
   message?: string;
@@ -76,7 +80,7 @@ export interface ReadResponse {
     description: string;
     url: string;
     content: string;
-    usage: { tokens: number; };
+    usage: { tokens: number };
   };
   name?: string;
   message?: string;
@@ -142,7 +146,7 @@ export type ResponseSchema = {
 };
 
 export interface StreamMessage {
-  type: 'progress' | 'answer' | 'error';
+  type: "progress" | "answer" | "error";
   data: string | StepAction;
   step?: number;
   budget?: {
@@ -153,8 +157,8 @@ export interface StreamMessage {
 }
 
 // Tracker Types
-import { TokenTracker } from './utils/token-tracker';
-import { ActionTracker } from './utils/action-tracker';
+import { TokenTracker } from "./utils/token-tracker";
+import { ActionTracker } from "./utils/action-tracker";
 
 export interface TrackerContext {
   tokenTracker: TokenTracker;

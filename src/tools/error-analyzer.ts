@@ -1,26 +1,28 @@
-import {GoogleGenerativeAI, SchemaType} from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { GEMINI_API_KEY, modelConfigs } from "../config";
 import { TokenTracker } from "../utils/token-tracker";
 
-import { ErrorAnalysisResponse } from '../types';
+import { ErrorAnalysisResponse } from "../types";
 
 const responseSchema = {
   type: SchemaType.OBJECT,
   properties: {
     recap: {
       type: SchemaType.STRING,
-      description: "Recap of the actions taken and the steps conducted"
+      description: "Recap of the actions taken and the steps conducted",
     },
     blame: {
       type: SchemaType.STRING,
-      description: "Which action or the step was the root cause of the answer rejection"
+      description:
+        "Which action or the step was the root cause of the answer rejection",
     },
     improvement: {
       type: SchemaType.STRING,
-      description: "Suggested key improvement for the next iteration, do not use bullet points, be concise and hot-take vibe."
-    }
+      description:
+        "Suggested key improvement for the next iteration, do not use bullet points, be concise and hot-take vibe.",
+    },
   },
-  required: ["recap", "blame", "improvement"]
+  required: ["recap", "blame", "improvement"],
 };
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -29,8 +31,8 @@ const model = genAI.getGenerativeModel({
   generationConfig: {
     temperature: modelConfigs.errorAnalyzer.temperature,
     responseMimeType: "application/json",
-    responseSchema: responseSchema
-  }
+    responseSchema: responseSchema,
+  },
 });
 
 function getPrompt(diaryContext: string[]): string {
@@ -109,26 +111,29 @@ Example analysis output:
 
 Review the steps below carefully and generate your analysis following this format.
 
-${diaryContext.join('\n')}
+${diaryContext.join("\n")}
 `;
 }
 
-export async function analyzeSteps(diaryContext: string[], tracker?: TokenTracker): Promise<{ response: ErrorAnalysisResponse, tokens: number }> {
+export async function analyzeSteps(
+  diaryContext: string[],
+  tracker?: TokenTracker,
+): Promise<{ response: ErrorAnalysisResponse; tokens: number }> {
   try {
     const prompt = getPrompt(diaryContext);
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const usage = response.usageMetadata;
     const json = JSON.parse(response.text()) as ErrorAnalysisResponse;
-    console.log('Error analysis:', {
+    console.log("Error analysis:", {
       is_valid: !json.blame,
-      reason: json.blame || 'No issues found'
+      reason: json.blame || "No issues found",
     });
     const tokens = usage?.totalTokenCount || 0;
-    (tracker || new TokenTracker()).trackUsage('error-analyzer', tokens);
+    (tracker || new TokenTracker()).trackUsage("error-analyzer", tokens);
     return { response: json, tokens };
   } catch (error) {
-    console.error('Error in answer evaluation:', error);
+    console.error("Error in answer evaluation:", error);
     throw error;
   }
 }

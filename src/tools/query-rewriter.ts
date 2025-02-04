@@ -3,27 +3,28 @@ import { GEMINI_API_KEY, modelConfigs } from "../config";
 import { TokenTracker } from "../utils/token-tracker";
 import { SearchAction } from "../types";
 
-import { KeywordsResponse } from '../types';
+import { KeywordsResponse } from "../types";
 
 const responseSchema = {
   type: SchemaType.OBJECT,
   properties: {
     thought: {
       type: SchemaType.STRING,
-      description: "Strategic reasoning about query complexity and search approach"
+      description:
+        "Strategic reasoning about query complexity and search approach",
     },
     queries: {
       type: SchemaType.ARRAY,
       items: {
         type: SchemaType.STRING,
-        description: "Search query with integrated operators"
+        description: "Search query with integrated operators",
       },
       description: "Array of search queries with appropriate operators",
       minItems: 1,
-      maxItems: 3
-    }
+      maxItems: 3,
+    },
   },
-  required: ["thought", "queries"]
+  required: ["thought", "queries"],
 };
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -32,8 +33,8 @@ const model = genAI.getGenerativeModel({
   generationConfig: {
     temperature: modelConfigs.queryRewriter.temperature,
     responseMimeType: "application/json",
-    responseSchema: responseSchema
-  }
+    responseSchema: responseSchema,
+  },
 });
 
 function getPrompt(action: SearchAction): string {
@@ -105,7 +106,10 @@ Intention: ${action.thoughts}
 `;
 }
 
-export async function rewriteQuery(action: SearchAction, tracker?: TokenTracker): Promise<{ queries: string[], tokens: number }> {
+export async function rewriteQuery(
+  action: SearchAction,
+  tracker?: TokenTracker,
+): Promise<{ queries: string[]; tokens: number }> {
   try {
     const prompt = getPrompt(action);
     const result = await model.generateContent(prompt);
@@ -113,13 +117,13 @@ export async function rewriteQuery(action: SearchAction, tracker?: TokenTracker)
     const usage = response.usageMetadata;
     const json = JSON.parse(response.text()) as KeywordsResponse;
 
-    console.log('Query rewriter:', json.queries);
+    console.log("Query rewriter:", json.queries);
     const tokens = usage?.totalTokenCount || 0;
-    (tracker || new TokenTracker()).trackUsage('query-rewriter', tokens);
+    (tracker || new TokenTracker()).trackUsage("query-rewriter", tokens);
 
     return { queries: json.queries, tokens };
   } catch (error) {
-    console.error('Error in query rewriting:', error);
+    console.error("Error in query rewriting:", error);
     throw error;
   }
 }

@@ -2,24 +2,25 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { GEMINI_API_KEY, modelConfigs } from "../config";
 import { TokenTracker } from "../utils/token-tracker";
 
-import { DedupResponse } from '../types';
+import { DedupResponse } from "../types";
 
 const responseSchema = {
   type: SchemaType.OBJECT,
   properties: {
     thought: {
       type: SchemaType.STRING,
-      description: "Strategic reasoning about the overall deduplication approach"
+      description:
+        "Strategic reasoning about the overall deduplication approach",
     },
     unique_queries: {
       type: SchemaType.ARRAY,
       items: {
-        type: SchemaType.STRING
+        type: SchemaType.STRING,
       },
-      description: "Array of semantically unique queries from set A"
-    }
+      description: "Array of semantically unique queries from set A",
+    },
   },
-  required: ["thought", "unique_queries"]
+  required: ["thought", "unique_queries"],
 };
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -28,8 +29,8 @@ const model = genAI.getGenerativeModel({
   generationConfig: {
     temperature: modelConfigs.dedup.temperature,
     responseMimeType: "application/json",
-    responseSchema: responseSchema
-  }
+    responseSchema: responseSchema,
+  },
 });
 
 function getPrompt(newQueries: string[], existingQueries: string[]): string {
@@ -110,19 +111,23 @@ Set A: ${JSON.stringify(newQueries)}
 Set B: ${JSON.stringify(existingQueries)}`;
 }
 
-export async function dedupQueries(newQueries: string[], existingQueries: string[], tracker?: TokenTracker): Promise<{ unique_queries: string[], tokens: number }> {
+export async function dedupQueries(
+  newQueries: string[],
+  existingQueries: string[],
+  tracker?: TokenTracker,
+): Promise<{ unique_queries: string[]; tokens: number }> {
   try {
     const prompt = getPrompt(newQueries, existingQueries);
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const usage = response.usageMetadata;
     const json = JSON.parse(response.text()) as DedupResponse;
-    console.log('Dedup:', json.unique_queries);
+    console.log("Dedup:", json.unique_queries);
     const tokens = usage?.totalTokenCount || 0;
-    (tracker || new TokenTracker()).trackUsage('dedup', tokens);
+    (tracker || new TokenTracker()).trackUsage("dedup", tokens);
     return { unique_queries: json.unique_queries, tokens };
   } catch (error) {
-    console.error('Error in deduplication analysis:', error);
+    console.error("Error in deduplication analysis:", error);
     throw error;
   }
 }
@@ -134,7 +139,7 @@ export async function main() {
   try {
     await dedupQueries(newQueries, existingQueries);
   } catch (error) {
-    console.error('Failed to deduplicate queries:', error);
+    console.error("Failed to deduplicate queries:", error);
   }
 }
 

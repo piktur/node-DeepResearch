@@ -1,5 +1,5 @@
-import dotenv from 'dotenv';
-import { ProxyAgent, setGlobalDispatcher } from 'undici';
+import dotenv from "dotenv";
+import { ProxyAgent, setGlobalDispatcher } from "undici";
 
 interface ModelConfig {
   model: string;
@@ -15,7 +15,6 @@ interface ToolConfigs {
   agentBeastMode: ModelConfig;
 }
 
-
 dotenv.config();
 
 // Setup the proxy globally if present
@@ -25,45 +24,45 @@ if (process.env.https_proxy) {
     const dispatcher = new ProxyAgent({ uri: proxyUrl });
     setGlobalDispatcher(dispatcher);
   } catch (error) {
-    console.error('Failed to set proxy:', error);
+    console.error("Failed to set proxy:", error);
   }
 }
 
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY as string;
 export const JINA_API_KEY = process.env.JINA_API_KEY as string;
 export const BRAVE_API_KEY = process.env.BRAVE_API_KEY as string;
-export const SEARCH_PROVIDER = BRAVE_API_KEY ? 'brave' : 'duck';
+export const SEARCH_PROVIDER = BRAVE_API_KEY ? "brave" : "duck";
 
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = "gemini-1.5-flash";
 
 const defaultConfig: ModelConfig = {
   model: DEFAULT_MODEL,
-  temperature: 0
+  temperature: 0,
 };
 
 export const modelConfigs: ToolConfigs = {
   dedup: {
     ...defaultConfig,
-    temperature: 0.1
+    temperature: 0.1,
   },
   evaluator: {
-    ...defaultConfig
+    ...defaultConfig,
   },
   errorAnalyzer: {
-    ...defaultConfig
+    ...defaultConfig,
   },
   queryRewriter: {
     ...defaultConfig,
-    temperature: 0.1
+    temperature: 0.1,
   },
   agent: {
     ...defaultConfig,
-    temperature: 0.7
+    temperature: 0.7,
   },
   agentBeastMode: {
     ...defaultConfig,
-    temperature: 0.7
-  }
+    temperature: 0.7,
+  },
 };
 
 export const STEP_SLEEP = 1000;

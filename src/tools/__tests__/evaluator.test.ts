@@ -1,15 +1,15 @@
-import { evaluateAnswer } from '../evaluator';
-import { TokenTracker } from '../../utils/token-tracker';
+import { evaluateAnswer } from "../evaluator";
+import { TokenTracker } from "../../utils/token-tracker";
 
-describe('evaluateAnswer', () => {
-  it('should evaluate answer definitiveness', async () => {
+describe("evaluateAnswer", () => {
+  it("should evaluate answer definitiveness", async () => {
     const tokenTracker = new TokenTracker();
     const { response } = await evaluateAnswer(
-      'What is TypeScript?',
-      'TypeScript is a strongly typed programming language that builds on JavaScript.',
-      tokenTracker
+      "What is TypeScript?",
+      "TypeScript is a strongly typed programming language that builds on JavaScript.",
+      tokenTracker,
     );
-    expect(response).toHaveProperty('is_definitive');
-    expect(response).toHaveProperty('reasoning');
+    expect(response).toHaveProperty("is_definitive");
+    expect(response).toHaveProperty("reasoning");
   });
 });
