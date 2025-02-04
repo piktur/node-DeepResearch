@@ -1,6 +1,7 @@
 import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
 import type { EvaluationResponse } from "#src/types.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
+import { sleep } from "#src/utils/sleep.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const responseSchema = {
@@ -68,23 +69,40 @@ export async function evaluateAnswer(
   answer: string,
   tracker?: TokenTracker,
 ): Promise<{ response: EvaluationResponse; tokens: number }> {
-  try {
-    const prompt = getPrompt(question, answer);
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const usage = response.usageMetadata;
-    const json = JSON.parse(response.text()) as EvaluationResponse;
-    console.log("Evaluation:", {
-      definitive: json.is_definitive,
-      reason: json.reasoning,
-    });
-    const tokens = usage?.totalTokenCount || 0;
-    (tracker || new TokenTracker()).trackUsage("evaluator", tokens);
-    return { response: json, tokens };
-  } catch (error) {
-    console.error("Error in answer evaluation:", error);
-    throw error;
+  let retries = 3;
+  let delay = 1000; // Initial delay in milliseconds
+
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const prompt = getPrompt(question, answer);
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const usage = response.usageMetadata;
+      const json = JSON.parse(response.text()) as EvaluationResponse;
+      console.log("Evaluation:", {
+        definitive: json.is_definitive,
+        reason: json.reasoning,
+      });
+      const tokens = usage?.totalTokenCount || 0;
+      (tracker || new TokenTracker()).trackUsage("evaluator", tokens);
+      return { response: json, tokens };
+    } catch (error: any) {
+      if (error.status === 429 && i < retries) {
+        console.warn(
+          `Rate limit encountered, retrying in ${delay / 1000} seconds...`,
+          `Attempt ${i + 1} of ${retries + 1}`,
+        );
+        await sleep(delay);
+        delay *= 2; // Exponential backoff
+      } else {
+        console.error("Error in answer evaluation:", error);
+        throw error; // Re-throw the error for non-429 errors or after max retries
+      }
+    }
   }
+  throw new Error(
+    "Failed to evaluate answer after multiple retries due to rate limiting.",
+  ); // If loop completes without returning, all retries failed
 }
 
 // Example usage
