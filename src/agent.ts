@@ -1,24 +1,24 @@
-import {GoogleGenerativeAI, SchemaType} from "@google/generative-ai";
-import {readUrl} from "./tools/read";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { SafeSearchType, search as duckSearch } from "duck-duck-scrape";
 import fs from 'fs/promises';
-import {SafeSearchType, search as duckSearch} from "duck-duck-scrape";
-import {braveSearch} from "./tools/brave-search";
-import {rewriteQuery} from "./tools/query-rewriter";
-import {dedupQueries} from "./tools/dedup";
-import {evaluateAnswer} from "./tools/evaluator";
-import {analyzeSteps} from "./tools/error-analyzer";
 import {
+  DEFAULT_BUDGET_SPLIT_RATIO,
   GEMINI_API_KEY,
   JINA_API_KEY,
+  MAX_RECURSION_DEPTH,
   SEARCH_PROVIDER,
   STEP_SLEEP,
-  modelConfigs,
-  DEFAULT_BUDGET_SPLIT_RATIO, MAX_RECURSION_DEPTH
+  modelConfigs
 } from "./config";
-import {TokenTracker} from "./utils/token-tracker";
-import {ActionTracker} from "./utils/action-tracker";
-import {StepAction, SchemaProperty, ResponseSchema, AnswerAction} from "./types";
-import {TrackerContext} from "./types";
+import { braveSearch } from "./tools/brave-search";
+import { dedupQueries } from "./tools/dedup";
+import { analyzeSteps } from "./tools/error-analyzer";
+import { evaluateAnswer } from "./tools/evaluator";
+import { rewriteQuery } from "./tools/query-rewriter";
+import { readUrl } from "./tools/read";
+import { AnswerAction, ResponseSchema, SchemaProperty, StepAction, TrackerContext } from "./types";
+import { ActionTracker } from "./utils/action-tracker";
+import { TokenTracker } from "./utils/token-tracker";
 
 async function sleep(ms: number) {
   const seconds = Math.ceil(ms / 1000);
@@ -354,13 +354,13 @@ export async function getResponse(question: string, tokenBudget: number = 1_000_
           diaryContext.push(`
 At step ${step} and ${badAttempts} attempts, you took **answer** action and found an answer, not a perfect one but good enough to answer the original question:
 
-Original question: 
+Original question:
 ${currentQuestion}
 
-Your answer: 
+Your answer:
 ${thisStep.answer}
 
-The evaluator thinks your answer is good because: 
+The evaluator thinks your answer is good because:
 ${evaluation.reasoning}
 
 Your journey ends here.
@@ -374,13 +374,13 @@ Your journey ends here.
             diaryContext.push(`
 At step ${step}, you took **answer** action and finally found the answer to the original question:
 
-Original question: 
+Original question:
 ${currentQuestion}
 
-Your answer: 
+Your answer:
 ${thisStep.answer}
 
-The evaluator thinks your answer is good because: 
+The evaluator thinks your answer is good because:
 ${evaluation.reasoning}
 
 Your journey ends here. You have successfully answered the original question. Congratulations! 🎉
@@ -391,13 +391,13 @@ Your journey ends here. You have successfully answered the original question. Co
             diaryContext.push(`
 At step ${step}, you took **answer** action and finally found the answer to the original question:
 
-Original question: 
+Original question:
 ${currentQuestion}
 
-Your answer: 
+Your answer:
 ${thisStep.answer}
 
-Unfortunately, you did not provide any references to support your answer. 
+Unfortunately, you did not provide any references to support your answer.
 You need to find more URL references to support your answer.`);
           }
 
@@ -408,13 +408,13 @@ You need to find more URL references to support your answer.`);
           diaryContext.push(`
 At step ${step}, you took **answer** action but evaluator thinks it is not a good answer:
 
-Original question: 
+Original question:
 ${currentQuestion}
 
-Your answer: 
+Your answer:
 ${thisStep.answer}
 
-The evaluator thinks your answer is bad because: 
+The evaluator thinks your answer is bad because:
 ${evaluation.reasoning}
 `);
           // store the bad context and reset the diary context
@@ -435,13 +435,13 @@ ${evaluation.reasoning}
         diaryContext.push(`
 At step ${step}, you took **answer** action. You found a good answer to the sub-question:
 
-Sub-question: 
+Sub-question:
 ${currentQuestion}
 
-Your answer: 
+Your answer:
 ${thisStep.answer}
 
-The evaluator thinks your answer is good because: 
+The evaluator thinks your answer is good because:
 ${evaluation.reasoning}
 
 Although you solved a sub-question, you still need to find the answer to the original question. You need to keep going.
@@ -495,8 +495,8 @@ The answers to these questions have been added to your knowledge base.
 `);
       } else {
         diaryContext.push(`
-At step ${step}, you took **reflect** and think about the knowledge gaps. You tried to break down the question "${currentQuestion}" into gap-questions like this: ${oldQuestions.join(', ')} 
-But then you realized you have asked them before. You decided to to think out of the box or cut from a completely different angle. 
+At step ${step}, you took **reflect** and think about the knowledge gaps. You tried to break down the question "${currentQuestion}" into gap-questions like this: ${oldQuestions.join(', ')}
+But then you realized you have asked them before. You decided to to think out of the box or cut from a completely different angle.
 `);
         updateContext({
           totalStep,
@@ -550,7 +550,7 @@ But then you realized you have asked them before. You decided to to think out of
         diaryContext.push(`
 At step ${step}, you took the **search** action and look for external information for the question: "${currentQuestion}".
 In particular, you tried to search for the following keywords: "${keywordsQueries.join(', ')}".
-You found quite some information and add them to your URL list and **visit** them later when needed. 
+You found quite some information and add them to your URL list and **visit** them later when needed.
 `);
 
         updateContext({
@@ -562,7 +562,7 @@ You found quite some information and add them to your URL list and **visit** the
       } else {
         diaryContext.push(`
 At step ${step}, you took the **search** action and look for external information for the question: "${currentQuestion}".
-In particular, you tried to search for the following keywords: ${oldKeywords.join(', ')}. 
+In particular, you tried to search for the following keywords: ${oldKeywords.join(', ')}.
 But then you realized you have already searched for these keywords before.
 You decided to think out of the box or cut from a completely different angle.
 `);

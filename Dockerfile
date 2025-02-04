@@ -3,14 +3,14 @@ FROM node:alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN pnpm install --frozen-lockfile --production
 
 COPY . .
 
-ENV GEMINI_API_KEY=""
-ENV JINA_API_KEY=""
-ENV BRAVE_API_KEY=""
+ENV GEMINI_API_KEY="" \
+    JINA_API_KEY="" \
+    BRAVE_API_KEY=""
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+CMD ["/bin/sh"]

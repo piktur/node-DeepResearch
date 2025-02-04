@@ -1,4 +1,4 @@
-import axios from 'axios';  // You'll need to npm install axios first
+import axios from 'axios'; // You'll need to npm install axios first
 
 async function testRequest(): Promise<any> {
   console.log('Starting test request...');

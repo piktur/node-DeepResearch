@@ -5,10 +5,9 @@ Keep searching and reading webpages until finding the answer (or exceeding the t
 Query: `"who is the biggest? cohere, jina ai, voyage?"` - 13 steps
 ![example-biggest](example-biggest.gif)
 
-
 ## Install
 
-We use gemini for llm, brave/duckduckgo for search, jina reader for reading a webpage. 
+We use gemini for llm, brave/duckduckgo for search, jina reader for reading a webpage.
 
 ```bash
 export GEMINI_API_KEY=...  # for gemini api, ask han
@@ -20,9 +19,22 @@ cd node-DeepResearch
 npm install
 ```
 
-## Examples
+## Build
+
+```sh
+docker build -t deepresearch .
 ```
-# example: no tool calling 
+
+## Run
+
+```sh
+docker compose run -it --rm deepresearch npm run dev "1+1="
+```
+
+## Examples
+
+```
+# example: no tool calling
 npm run dev "1+1="
 npm run dev "what is the capital of France?"
 
