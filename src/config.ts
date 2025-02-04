@@ -67,6 +67,8 @@ export const modelConfigs: ToolConfigs = {
 };
 
 export const STEP_SLEEP = 1000;
+export const DEFAULT_BUDGET_SPLIT_RATIO = 0.3; // Each sub-question gets 30% of parent's budget
+
 
 if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not found");
 if (!JINA_API_KEY) throw new Error("JINA_API_KEY not found");

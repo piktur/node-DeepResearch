@@ -7,7 +7,14 @@ import {rewriteQuery} from "./tools/query-rewriter";
 import {dedupQueries} from "./tools/dedup";
 import {evaluateAnswer} from "./tools/evaluator";
 import {analyzeSteps} from "./tools/error-analyzer";
-import {GEMINI_API_KEY, JINA_API_KEY, SEARCH_PROVIDER, STEP_SLEEP, modelConfigs} from "./config";
+import {
+  GEMINI_API_KEY,
+  JINA_API_KEY,
+  SEARCH_PROVIDER,
+  STEP_SLEEP,
+  modelConfigs,
+  DEFAULT_BUDGET_SPLIT_RATIO
+} from "./config";
 import {TokenTracker} from "./utils/token-tracker";
 import {ActionTracker} from "./utils/action-tracker";
 import {StepAction, SchemaProperty, ResponseSchema, AnswerAction} from "./types";
@@ -197,7 +204,7 @@ ${urlList}
   }
 
   if (beastMode) {
-   actions.push(`**answer**:
+    actions.push(`**answer**:
 - You have gathered enough information to answer the question; they may not be perfect, but this is your very last chance to answer the question.
 - Try the best of the best reasoning ability, investigate every details in the context and provide the best answer you can think of.
 - When uncertain, educated guess is allowed and encouraged, but make sure it is based on the context and knowledge you have gathered.
@@ -245,19 +252,22 @@ function removeAllLineBreaks(text: string) {
 
 export async function getResponse(question: string, tokenBudget: number = 1_000_000,
                                   maxBadAttempts: number = 3,
-                                  existingContext?: Partial<TrackerContext>): Promise<{ result: StepAction; context: TrackerContext }> {
+                                  existingContext?: Partial<TrackerContext>,
+                                  parentKnowledge: Array<{ question: string, answer: string, type: string }> = [],
+                                  budgetSplitRatio: number = DEFAULT_BUDGET_SPLIT_RATIO,
+                                  recursionLevel: number = 0): Promise<{ result: StepAction; context: TrackerContext }> {
   const context: TrackerContext = {
     tokenTracker: existingContext?.tokenTracker || new TokenTracker(tokenBudget),
     actionTracker: existingContext?.actionTracker || new ActionTracker()
   };
-  context.actionTracker.trackAction({ gaps: [question], totalStep: 0, badAttempts: 0 });
+  context.actionTracker.trackAction({gaps: [question], totalStep: 0, badAttempts: 0});
   let step = 0;
   let totalStep = 0;
   let badAttempts = 0;
   const gaps: string[] = [question];  // All questions to be answered including the orginal question
   const allQuestions = [question];
   const allKeywords = [];
-  const allKnowledge = [];  // knowledge are intermedidate questions that are answered
+  const allKnowledge = [...parentKnowledge];  // knowledge are intermedidate questions that are answered
   const badContext = [];
   let diaryContext = [];
   let allowAnswer = true;
@@ -275,9 +285,9 @@ export async function getResponse(question: string, tokenBudget: number = 1_000_
     await sleep(STEP_SLEEP);
     step++;
     totalStep++;
-    context.actionTracker.trackAction({ totalStep, thisStep, gaps, badAttempts });
+    context.actionTracker.trackAction({totalStep, thisStep, gaps, badAttempts});
     const budgetPercentage = (context.tokenTracker.getTotalUsage() / tokenBudget * 100).toFixed(2);
-    console.log(`Step ${totalStep} / Budget used ${budgetPercentage}%`);
+    console.log(`| Recursion ${recursionLevel} | Step ${totalStep} | Budget used ${budgetPercentage}% |`);
     console.log('Gaps:', gaps);
     allowReflect = allowReflect && (gaps.length <= 1);
     const currentQuestion = gaps.length > 0 ? gaps.shift()! : question;
@@ -298,7 +308,7 @@ export async function getResponse(question: string, tokenBudget: number = 1_000_
       allKnowledge,
       allURLs,
       false
-      );
+    );
 
     const model = genAI.getGenerativeModel({
       model: modelConfigs.agent.model,
@@ -456,17 +466,43 @@ Although you solved a sub-question, you still need to find the answer to the ori
         newGapQuestions = (await dedupQueries(newGapQuestions, allQuestions)).unique_queries;
       }
       if (newGapQuestions.length > 0) {
-        // found new gap questions
-        diaryContext.push(`
-At step ${step}, you took **reflect** and think about the knowledge gaps. You found some sub-questions are important to the question: "${currentQuestion}"
-You realize you need to know the answers to the following sub-questions:
-${newGapQuestions.map((q: string) => `- ${q}`).join('\n')}
+        for (const gapQuestion of newGapQuestions) {
+          // Create sub-context with remaining token budget
+          // Calculate sub-question budget as a fraction of current remaining budget
+          const currentRemaining = tokenBudget - context.tokenTracker.getTotalUsage();
+          const subQuestionBudget = Math.floor(currentRemaining * budgetSplitRatio);
+          // Log the budget allocation for monitoring
+          console.log(`Allocating ${subQuestionBudget} tokens for sub-question: "${gapQuestion}"`)
 
-You will now figure out the answers to these sub-questions and see if they can help me find the answer to the original question.
+          const subContext = {
+            tokenTracker: context.tokenTracker,  // Share token tracker
+            actionTracker: context.actionTracker // Share action tracker
+          };
+
+          // Recursively resolve gap question
+          const {result: gapResult} = await getResponse(
+            gapQuestion,
+            subQuestionBudget,
+            maxBadAttempts,
+            subContext,
+            allKnowledge,  // Pass current knowledge to sub-question
+            recursionLevel + 1
+          );
+
+          // If gap was successfully answered, add to knowledge
+          if (gapResult.action === 'answer') {
+            allKnowledge.push({
+              question: gapQuestion,
+              answer: gapResult.answer,
+              type: 'qa'
+            });
+          }
+        }
+        diaryContext.push(`
+At step ${step}, you took **reflect** and resolved ${newGapQuestions.length} sub-questions:
+${newGapQuestions.map(q => `- ${q}`).join('\n')}
+The answers to these questions have been added to your knowledge base.
 `);
-        gaps.push(...newGapQuestions);
-        allQuestions.push(...newGapQuestions);
-        gaps.push(question);  // always keep the original question in the gaps
       } else {
         diaryContext.push(`
 At step ${step}, you took **reflect** and think about the knowledge gaps. You tried to break down the question "${currentQuestion}" into gap-questions like this: ${oldQuestions.join(', ')} 
@@ -603,13 +639,13 @@ You decided to think out of the box or cut from a completely different angle.`);
       }
     }
 
-    await storeContext(prompt, [allContext, allKeywords, allQuestions, allKnowledge], totalStep);
+    await storeContext(prompt, [allContext, allKeywords, allQuestions, allKnowledge], totalStep, recursionLevel);
   }
   step++;
   totalStep++;
-  await storeContext(prompt, [allContext, allKeywords, allQuestions, allKnowledge], totalStep);
+  await storeContext(prompt, [allContext, allKeywords, allQuestions, allKnowledge], totalStep, recursionLevel);
   if (isAnswered) {
-    return { result: thisStep, context };
+    return {result: thisStep, context};
   } else {
     console.log('Enter Beast mode!!!')
     const prompt = getPrompt(
@@ -624,7 +660,7 @@ You decided to think out of the box or cut from a completely different angle.`);
       allKnowledge,
       allURLs,
       true
-      );
+    );
 
     const model = genAI.getGenerativeModel({
       model: modelConfigs.agentBeastMode.model,
@@ -647,21 +683,21 @@ You decided to think out of the box or cut from a completely different angle.`);
     const usage = response.usageMetadata;
     context.tokenTracker.trackUsage('agent', usage?.totalTokenCount || 0);
 
-    await storeContext(prompt, [allContext, allKeywords, allQuestions, allKnowledge], totalStep);
+    await storeContext(prompt, [allContext, allKeywords, allQuestions, allKnowledge], totalStep, recursionLevel);
     thisStep = JSON.parse(response.text());
     console.log(thisStep)
-    return { result: thisStep, context };
+    return {result: thisStep, context};
   }
 }
 
-async function storeContext(prompt: string, memory: any[][], step: number) {
+async function storeContext(prompt: string, memory: any[][], step: number, recursionLevel: number) {
   try {
-    await fs.writeFile(`prompt-${step}.txt`, prompt);
+    await fs.writeFile(`prompt-${recursionLevel}-${step}.txt`, prompt);
     const [context, keywords, questions, knowledge] = memory;
-    await fs.writeFile('context.json', JSON.stringify(context, null, 2));
-    await fs.writeFile('queries.json', JSON.stringify(keywords, null, 2));
-    await fs.writeFile('questions.json', JSON.stringify(questions, null, 2));
-    await fs.writeFile('knowledge.json', JSON.stringify(knowledge, null, 2));
+    await fs.writeFile(`context-${recursionLevel}.json`, JSON.stringify(context, null, 2));
+    await fs.writeFile(`queries-${recursionLevel}.json`, JSON.stringify(keywords, null, 2));
+    await fs.writeFile(`questions-${recursionLevel}.json`, JSON.stringify(questions, null, 2));
+    await fs.writeFile(`knowledge-${recursionLevel}.json`, JSON.stringify(knowledge, null, 2));
   } catch (error) {
     console.error('Context storage failed:', error);
   }
@@ -672,7 +708,10 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export async function main() {
   const question = process.argv[2] || "";
-  const { result: finalStep, context: tracker } = await getResponse(question) as { result: AnswerAction; context: TrackerContext };
+  const {
+    result: finalStep,
+    context: tracker
+  } = await getResponse(question) as { result: AnswerAction; context: TrackerContext };
   console.log('Final Answer:', finalStep.answer);
 
   tracker.tokenTracker.printSummary();
