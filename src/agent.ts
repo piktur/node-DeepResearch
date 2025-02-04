@@ -13,7 +13,7 @@ import {
   SEARCH_PROVIDER,
   STEP_SLEEP,
   modelConfigs,
-  DEFAULT_BUDGET_SPLIT_RATIO
+  DEFAULT_BUDGET_SPLIT_RATIO, MAX_RECURSION_DEPTH
 } from "./config";
 import {TokenTracker} from "./utils/token-tracker";
 import {ActionTracker} from "./utils/action-tracker";
@@ -291,6 +291,7 @@ export async function getResponse(question: string, tokenBudget: number = 1_000_
     console.log(`| Recursion ${recursionLevel} | Step ${totalStep} | Token Budget ${tokenBudget} | Budget Used: ${budgetPercentage}% | Q: ${currentQuestion} |`);
 
     // update all urls with buildURLMap
+    allowReflect = allowReflect && (recursionLevel < MAX_RECURSION_DEPTH);
     allowRead = allowRead && (Object.keys(allURLs).length > 0);
     allowSearch = allowSearch && (Object.keys(allURLs).length < 20);  // disable search when too many urls already
 
