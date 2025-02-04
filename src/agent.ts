@@ -319,13 +319,6 @@ export async function getResponse(question: string, tokenBudget: number = 1_000_
       }
     });
 
-    // Check if we have enough budget for this operation (estimate 50 tokens for prompt + response)
-    const estimatedTokens = 50;
-    const currentUsage = context.tokenTracker.getTotalUsage();
-    if (currentUsage + estimatedTokens > tokenBudget) {
-      throw new Error(`Token budget would be exceeded: ${currentUsage + estimatedTokens} > ${tokenBudget}`);
-    }
-
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const usage = response.usageMetadata;
@@ -672,12 +665,6 @@ You decided to think out of the box or cut from a completely different angle.`);
       }
     });
 
-    // Check if we have enough budget for this operation (estimate 50 tokens for prompt + response)
-    const estimatedTokens = 50;
-    const currentUsage = context.tokenTracker.getTotalUsage();
-    if (currentUsage + estimatedTokens > tokenBudget) {
-      throw new Error(`Token budget would be exceeded: ${currentUsage + estimatedTokens} > ${tokenBudget}`);
-    }
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
