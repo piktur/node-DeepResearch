@@ -1,6 +1,5 @@
-import { getResponse } from '../agent';
-import fs from 'fs/promises';
 import path from 'path';
+import { getResponse } from '../agent';
 
 // Mock console.log to prevent cluttering test output
 jest.spyOn(console, 'log').mockImplementation(() => {});
