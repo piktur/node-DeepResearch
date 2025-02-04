@@ -25,7 +25,9 @@ describe("Agent Functionality", () => {
     ); // context path is not passed, so default path will be used, no test update needed
 
     expect(result.action).toBe("answer");
-    expect(typeof result.answer).toBe("string");
+    if (result.action === "answer") {
+      expect(typeof result.answer).toBe("string");
+    }
   }, 30000);
 
   it.skip("should handle token budget limits", async () => {
@@ -51,7 +53,9 @@ describe("Agent Functionality", () => {
     const { result: result1, context } = await getResponse(question1);
 
     expect(result1.action).toBe("answer");
-    expect(typeof result1.answer).toBe("string");
+    if (result1.action === "answer") {
+      expect(typeof result1.answer).toBe("string");
+    }
 
     const question2 = "What is his wife's name?";
     const { result: result2 } = await getResponse(
@@ -62,7 +66,9 @@ describe("Agent Functionality", () => {
     );
 
     expect(result2.action).toBe("answer");
-    expect(typeof result2.answer).toBe("string");
+    if (result2.action === "answer") {
+      expect(typeof result2.answer).toBe("string");
+    }
   }, 60000); // Increased timeout for potentially longer test
 
   it("should use the provided outDir for storing context files", async () => {
