@@ -64,16 +64,16 @@ Question: ${JSON.stringify(question)}
 Answer: ${JSON.stringify(answer)}`;
 }
 
+/** @note Gemini free-tier limit 2RPM */
 export async function evaluateAnswer(
   question: string,
   answer: string,
   tracker?: TokenTracker,
-  delay: number = 5_000,
-  attempt: number = 0
+  delay: number = 20_000,
+  attempt: number = 1,
+  maxRetries: number = 3,
 ): Promise<{ response: EvaluationResponse; tokens: number }> {
-  const maxRetries = 3
-
-  if ((attempt + 1) > maxRetries) {
+  if (attempt > maxRetries) {
     throw new Error("Rate limit exceeded. Failed to evaluate answer.");
   }
 
@@ -97,11 +97,11 @@ export async function evaluateAnswer(
     if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
       console.warn(
         `Rate limit encountered, retrying in ${delay / 1000} seconds...`,
-        `Attempt ${attempt + 1} of ${maxRetries}`,
+        `Attempt ${attempt} of ${maxRetries}`,
       );
       await sleep(delay);
 
-      return await evaluateAnswer(question, answer, tracker, delay * attempt, attempt + 1);
+      return await evaluateAnswer(question, answer, tracker, delay * attempt + 1, attempt + 1);
     } else {
       throw error;
     }

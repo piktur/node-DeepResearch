@@ -828,7 +828,7 @@ export async function main() {
     undefined,
     undefined,
     undefined,
-    outDir
+    outDir,
   )) as { result: AnswerAction; context: TrackerContext };
   console.log("Final Answer:", finalStep.answer);
 
@@ -836,5 +836,5 @@ export async function main() {
 }
 
 // if (import.meta.main) {
-  main().catch(console.error);
+main().catch(console.error);
 // }

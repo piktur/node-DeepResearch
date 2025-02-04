@@ -33,7 +33,8 @@ export const JINA_API_KEY = process.env.JINA_API_KEY as string;
 export const BRAVE_API_KEY = process.env.BRAVE_API_KEY as string;
 export const SEARCH_PROVIDER = BRAVE_API_KEY ? "brave" : "duck";
 
-const DEFAULT_MODEL = "gemini-1.5-flash";
+// const DEFAULT_MODEL = "gemini-1.5-flash";
+const DEFAULT_MODEL = "gemini-2.0-flash-exp";
 
 const defaultConfig: ModelConfig = {
   model: DEFAULT_MODEL,

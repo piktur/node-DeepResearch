@@ -1,9 +1,9 @@
 import { getResponse } from "#src/agent.js";
-import fs from 'node:fs/promises';
+import fs from "node:fs/promises";
 import path from "path";
 
 jest.spyOn(console, "log").mockImplementation(() => {});
-jest.mock('node:fs/promises')
+jest.mock("node:fs/promises");
 
 describe("Agent Functionality", () => {
   it.skip("should return an answer action for a simple question", async () => {

@@ -21,36 +21,47 @@ pnpm install
 
 ## Run
 
+### Example: no tool calling
+
 ```sh
 docker compose run -it --rm api pnpm run dev "1+1="
 ```
 
-## Examples
-
+```sh
+docker compose run -it --rm api pnpm dev "what is the capital of France?"
 ```
-# example: no tool calling
-pnpm run dev "1+1="
-pnpm run dev "what is the capital of France?"
 
-# example: 2-step
-pnpm run dev "what is the latest news from Jina AI?"
+### Example: 2-step
 
-# example: 3-step
-pnpm run dev "what is the twitter account of jina ai's founder"
+```sh
+docker compose run -it --rm api pnpm dev "what is the latest news from Jina AI?"
+```
 
-# example: 13-step, ambiguious question (no def of "big")
-pnpm run dev "who is bigger? cohere, jina ai, voyage?"
+### Example: 3-step
 
-# example: open question, research-like, long chain of thoughts
-pnpm run dev "who will be president of US in 2028?"
-pnpm run dev "what should be jina ai strategy for 2025?"
+```sh
+docker compose run -it --rm api pnpm dev "what is the twitter account of jina ai's founder"
+```
+
+### Example: 13-step, ambiguious question (no def of "big")
+
+```sh
+docker compose run -it --rm api pnpm dev "who is bigger? cohere, jina ai, voyage?"
+```
+
+### Example: open question, research-like, long chain of thoughts
+
+```sh
+docker compose run -it --rm api pnpm dev "who will be president of US in 2028?"
+docker compose run -it --rm api pnpm dev "what should be jina ai strategy for 2025?"
 ```
 
 ## Web Server API
 
 Start the server:
+
 ```bash
-pnpm run serve
+docker compose run -it --rm api pnpm serve
 ```
 
 The server will start on http://localhost:3000 with the following endpoints:
@@ -86,14 +97,14 @@ The server will emit the following event types:
 - Error messages if something goes wrong
 
 Example events:
-```
+
+```sh
 data: {"type":"progress","trackers":{"tokenUsage":74950,"tokenBreakdown":{"agent":64631,"read":10319},"actionState":{"action":"search","thoughts":"The provided text mentions several investors in Jina AI but doesn't specify ownership percentages.  A direct search for ownership percentages is needed to answer the question definitively.","URLTargets":[],"answer":"","questionsToAnswer":[],"references":[],"searchQuery":"Jina AI investor ownership percentages"},"step":7,"badAttempts":0,"gaps":[]}}
 
 data: {"type":"progress","trackers":{"tokenUsage":74950,"tokenBreakdown":{"agent":64631,"read":10319},"actionState":{"action":"search","thoughts":"The provided text mentions several investors in Jina AI's funding rounds but doesn't specify ownership percentages.  A search focusing on equity stakes and ownership percentages held by each investor will provide the necessary information to answer the main question.","URLTargets":[],"answer":"","questionsToAnswer":[],"references":[],"searchQuery":"Jina AI investor equity percentage ownership stake"},"step":8,"badAttempts":0,"gaps":[]}}
 
 data: {"type":"progress","trackers":{"tokenUsage":88096,"tokenBreakdown":{"agent":77777,"read":10319},"actionState":{"action":"search","thoughts":"The provided text mentions several investors in Jina AI's funding rounds but doesn't specify ownership percentages.  A search focusing on equity stakes and ownership percentages held by each investor will provide the necessary information to answer the main question.","URLTargets":[],"answer":"","questionsToAnswer":[],"references":[],"searchQuery":"Jina AI investor equity percentage ownership stake"},"step":8,"badAttempts":0,"gaps":[]}}
 ```
-
 
 ## How Does it Work?
 
