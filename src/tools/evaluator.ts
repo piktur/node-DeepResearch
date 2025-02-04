@@ -1,8 +1,8 @@
 import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
 import type { EvaluationResponse } from "#src/types.js";
-import { TokenTracker } from "#src/utils/token-tracker.js";
 import { sleep } from "#src/utils/sleep.js";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { TokenTracker } from "#src/utils/token-tracker.js";
+import { GoogleGenerativeAI, GoogleGenerativeAIFetchError, SchemaType } from "@google/generative-ai";
 
 const responseSchema = {
   type: SchemaType.OBJECT,
@@ -86,8 +86,8 @@ export async function evaluateAnswer(
       const tokens = usage?.totalTokenCount || 0;
       (tracker || new TokenTracker()).trackUsage("evaluator", tokens);
       return { response: json, tokens };
-    } catch (error: any) {
-      if (error.status === 429 && i < retries) {
+    } catch (error) {
+      if (error instanceof GoogleGenerativeAIFetchError && error.status === 429 && i < retries) {
         console.warn(
           `Rate limit encountered, retrying in ${delay / 1000} seconds...`,
           `Attempt ${i + 1} of ${retries + 1}`,
