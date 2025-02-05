@@ -40,10 +40,9 @@ export class TokenTracker extends EventEmitter {
   }
 
   printSummary() {
-    const breakdown = this.getUsageBreakdown();
     console.log("Token Usage Summary:", {
       total: this.getTotalUsage(),
-      breakdown,
+      breakdown: this.getUsageBreakdown(),
     });
   }
 

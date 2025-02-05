@@ -19,10 +19,11 @@ import type {
   ResponseSchema,
   SchemaProperty,
   StepAction,
-  TrackerContext,
+  TrackerContext
 } from "#src/types.js";
 import { ActionTracker } from "#src/utils/action-tracker.js";
 import { fetchWithRetry } from "#src/utils/fetch.js";
+import { render } from "#src/utils/render.js";
 import { sleep } from "#src/utils/sleep.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
@@ -293,7 +294,7 @@ export async function getResponse(
   budgetSplitRatio: number = DEFAULT_BUDGET_SPLIT_RATIO,
   recursionLevel: number = 0,
   outDir: string = OUT_DIR,
-): Promise<{ result: StepAction; context: TrackerContext }> {
+): Promise<{ result: StepAction | AnswerAction; context: TrackerContext }> {
   const context: TrackerContext = {
     tokenTracker:
       existingContext?.tokenTracker || new TokenTracker(tokenBudget),
@@ -902,7 +903,6 @@ const finalize = async ({
     outDir,
   );
   thisStep = JSON.parse(response.text());
-  console.log(thisStep);
 
   return { result: thisStep, context };
 };
@@ -945,9 +945,10 @@ async function storeContext(
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export async function main() {
+  const start = Date.now()
   const question = process.argv[2] || "";
   const outDir = `/tmp/${Date.now()}`;
-  const { result: finalStep, context: tracker } = (await getResponse(
+  const { result, context: tracker } = (await getResponse(
     question,
     undefined,
     undefined,
@@ -956,8 +957,18 @@ export async function main() {
     undefined,
     undefined,
     outDir,
-  )) as { result: AnswerAction; context: TrackerContext };
-  console.log("Final Answer:", finalStep.answer);
+  ));
+  const end = Date.now()
+
+  if ('answer' in result) {
+    console.log(result.answer)
+  }
+
+  const usage = {
+    total: tracker.tokenTracker.getTotalUsage(),
+    breakdown: tracker.tokenTracker.getUsageBreakdown(),
+  }
+  await fs.writeFile(path.join(outDir, 'report.md'), render([result], usage, end - start), 'utf-8')
 
   tracker.tokenTracker.printSummary();
 }

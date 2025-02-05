@@ -13,7 +13,9 @@ export type SearchAction = BaseAction & {
 
 export type AnswerAction = BaseAction & {
   action: "answer";
+  question: string;
   answer: string;
+  totalStep: number;
   references: Array<{
     exactQuote: string;
     url: string;
