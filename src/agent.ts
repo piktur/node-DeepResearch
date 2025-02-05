@@ -15,12 +15,14 @@ import { rewriteQuery } from "#src/tools/query-rewriter.js";
 import { readUrl } from "#src/tools/read.js";
 import type {
   AnswerAction,
+  EvaluationResponse,
   ResponseSchema,
   SchemaProperty,
   StepAction,
-  TrackerContext,
+  TrackerContext
 } from "#src/types.js";
 import { ActionTracker } from "#src/utils/action-tracker.js";
+import { sleep } from "#src/utils/sleep.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { SafeSearchType, search as duckSearch } from "duck-duck-scrape";
@@ -29,11 +31,7 @@ import path from "node:path";
 
 const OUT_DIR = `/tmp/${Date.now()}`;
 
-async function sleep(ms: number) {
-  const seconds = Math.ceil(ms / 1000);
-  console.log(`Waiting ${seconds}s...`);
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+class Terminus extends Error {}
 
 function getSchema(
   allowReflect: boolean,
@@ -310,10 +308,17 @@ export async function getResponse(
   let badAttempts = 0;
   const gaps: string[] = [question]; // All questions to be answered including the orginal question
   const allQuestions = [question];
-  const allKeywords = [];
+  const allKeywords: string[] = [];
   const allKnowledge = [...parentKnowledge]; // knowledge are intermedidate questions that are answered
-  const badContext = [];
-  let diaryContext = [];
+  const badContext: {
+    question: string;
+    answer: string;
+    evaluation: string;
+    recap: string;
+    blame: string;
+    improvement: string;
+  }[] = [];
+  let diaryContext: string[] = [];
   let allowAnswer = true;
   let allowSearch = true;
   let allowRead = true;
@@ -329,6 +334,7 @@ export async function getResponse(
 
   const allURLs: Record<string, string> = {};
   const visitedURLs: string[] = [];
+
   while (
     context.tokenTracker.getTotalUsage() < tokenBudget &&
     badAttempts <= maxBadAttempts
@@ -343,10 +349,12 @@ export async function getResponse(
       gaps,
       badAttempts,
     });
+
     const budgetPercentage = (
       (context.tokenTracker.getTotalUsage() / tokenBudget) *
       100
     ).toFixed(0);
+
     const currentQuestion = question;
     console.log(
       `| Recursion ${recursionLevel} | Step ${totalStep} | Token Budget ${tokenBudget} | Budget Used: ${budgetPercentage}% | Q: ${currentQuestion} |`,
@@ -386,7 +394,7 @@ export async function getResponse(
       },
     });
 
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(prompt)
     const response = await result.response;
     const usage = response.usageMetadata;
     context.tokenTracker.trackUsage("agent", usage?.totalTokenCount || 0);
@@ -414,11 +422,32 @@ export async function getResponse(
         ...thisStep,
       });
 
-      const { response: evaluation } = await evaluateAnswer(
-        currentQuestion,
-        thisStep.answer,
-        context.tokenTracker,
-      );
+      let evaluation: EvaluationResponse
+      try {
+        evaluation = (await evaluateAnswer(
+          currentQuestion,
+          thisStep.answer,
+          context.tokenTracker,
+        )).response
+      } catch (err) {
+        return await finalize({
+          question,
+          diaryContext,
+          allQuestions,
+          badContext,
+          allKnowledge,
+          allURLs,
+          allowAnswer,
+          modelConfigs,
+          genAI,
+          allKeywords,
+          totalStep,
+          recursionLevel,
+          thisStep,
+          context,
+          outDir,
+        })
+      }
 
       if (currentQuestion === question) {
         if (badAttempts >= maxBadAttempts) {
@@ -440,6 +469,7 @@ Your journey ends here.
           isAnswered = false;
           break;
         }
+
         if (evaluation.is_definitive) {
           if (
             thisStep.references?.length > 0 ||
@@ -603,7 +633,7 @@ But then you realized you have asked them before. You decided to to think out of
         const searchResults = [];
         for (const query of keywordsQueries) {
           console.log(`Search query: ${query}`);
-          let results;
+          let results: Awaited<ReturnType<typeof duckSearch>>;
           if (SEARCH_PROVIDER === "duck") {
             results = await duckSearch(query, {
               safeSearch: SafeSearchType.STRICT,
@@ -726,46 +756,10 @@ You decided to think out of the box or cut from a completely different angle.`);
       outDir,
     );
   }
-  step++;
-  totalStep++;
-  await storeContext(
-    prompt,
-    [allContext, allKeywords, allQuestions, allKnowledge],
-    totalStep,
-    recursionLevel,
-    outDir,
-  );
-  if (isAnswered) {
-    return { result: thisStep, context };
-  } else {
-    console.log("Enter Beast mode!!!");
-    const prompt = getPrompt(
-      question,
-      diaryContext,
-      allQuestions,
-      false,
-      false,
-      false,
-      false,
-      badContext,
-      allKnowledge,
-      allURLs,
-      true,
-    );
 
-    const model = genAI.getGenerativeModel({
-      model: modelConfigs.agentBeastMode.model,
-      generationConfig: {
-        temperature: modelConfigs.agentBeastMode.temperature,
-        responseMimeType: "application/json",
-        responseSchema: getSchema(false, false, allowAnswer, false),
-      },
-    });
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const usage = response.usageMetadata;
-    context.tokenTracker.trackUsage("agent", usage?.totalTokenCount || 0);
+  try {
+    step++;
+    totalStep++;
 
     await storeContext(
       prompt,
@@ -774,10 +768,120 @@ You decided to think out of the box or cut from a completely different angle.`);
       recursionLevel,
       outDir,
     );
-    thisStep = JSON.parse(response.text());
-    console.log(thisStep);
-    return { result: thisStep, context };
+
+    if (isAnswered) {
+      return { result: thisStep, context };
+    } else {
+      throw new Terminus()
+    }
+  } catch (err) {
+    return await finalize({
+      question,
+      diaryContext,
+      allQuestions,
+      badContext,
+      allKnowledge,
+      allURLs,
+      allowAnswer,
+      modelConfigs,
+      genAI,
+      allKeywords,
+      totalStep,
+      recursionLevel,
+      thisStep,
+      context,
+      outDir,
+    });
   }
+}
+
+interface FinalizeParams {
+  question: string;
+  diaryContext: string[];
+  allQuestions: string[];
+  badContext: {
+    question: string;
+    answer: string;
+    evaluation: string;
+    recap: string;
+    blame: string;
+    improvement: string;
+  }[];
+  allKnowledge: {
+    question: string;
+    answer: string;
+    type: string;
+  }[];
+  allURLs: Record<string, string>;
+  allowAnswer: boolean;
+  modelConfigs: any;
+  genAI: any;
+  allKeywords: string[];
+  totalStep: number;
+  recursionLevel: number;
+  thisStep: any;
+  context: TrackerContext;
+  outDir: string;
+}
+
+const finalize = async ({
+  question,
+  diaryContext,
+  allQuestions,
+  badContext,
+  allKnowledge,
+  allURLs,
+  allowAnswer,
+  modelConfigs,
+  genAI,
+  allKeywords,
+  totalStep,
+  recursionLevel,
+  thisStep,
+  context,
+  outDir,
+}: FinalizeParams) => {
+  console.log("Enter Beast mode!!!");
+
+  const prompt = getPrompt(
+    question,
+    diaryContext,
+    allQuestions,
+    false,
+    false,
+    false,
+    false,
+    badContext,
+    allKnowledge,
+    allURLs,
+    true,
+  );
+
+  const model = genAI.getGenerativeModel({
+    model: modelConfigs.agentBeastMode.model,
+    generationConfig: {
+      temperature: modelConfigs.agentBeastMode.temperature,
+      responseMimeType: "application/json",
+      responseSchema: getSchema(false, false, allowAnswer, false),
+    },
+  });
+
+  const result = await model.generateContent(prompt)
+  const response = await result.response;
+  const usage = response.usageMetadata;
+  context.tokenTracker.trackUsage("agent", usage?.totalTokenCount || 0);
+
+  await storeContext(
+    prompt,
+    [allContext, allKeywords, allQuestions, allKnowledge],
+    totalStep,
+    recursionLevel,
+    outDir,
+  );
+  thisStep = JSON.parse(response.text());
+  console.log(thisStep);
+
+  return { result: thisStep, context };
 }
 
 async function storeContext(

@@ -2,7 +2,11 @@ import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
 import type { EvaluationResponse } from "#src/types.js";
 import { sleep } from "#src/utils/sleep.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
-import { GoogleGenerativeAI, GoogleGenerativeAIFetchError, SchemaType } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  GoogleGenerativeAIFetchError,
+  SchemaType,
+} from "@google/generative-ai";
 
 const responseSchema = {
   type: SchemaType.OBJECT,
@@ -72,7 +76,7 @@ export async function evaluateAnswer(
   delay: number = 20_000,
   attempt: number = 1,
   maxRetries: number = 3,
-): Promise<{ response: EvaluationResponse; tokens: number }> {
+): Promise<{ response: EvaluationResponse; tokens: number }> | never {
   if (attempt > maxRetries) {
     throw new Error("Rate limit exceeded. Failed to evaluate answer.");
   }
@@ -101,7 +105,13 @@ export async function evaluateAnswer(
       );
       await sleep(delay);
 
-      return await evaluateAnswer(question, answer, tracker, delay * attempt + 1, attempt + 1);
+      return await evaluateAnswer(
+        question,
+        answer,
+        tracker,
+        delay * attempt + 1,
+        attempt + 1,
+      );
     } else {
       throw error;
     }
