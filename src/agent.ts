@@ -23,6 +23,7 @@ import type {
 } from "#src/types.js";
 import { ActionTracker } from "#src/utils/action-tracker.js";
 import { sleep } from "#src/utils/sleep.js";
+import { fetchWithRetry } from "#src/utils/fetch.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { SafeSearchType, search as duckSearch } from "duck-duck-scrape";
@@ -104,7 +105,7 @@ function getSchema(
         "List of most important questions to fill the knowledge gaps of finding the answer to the original question",
       maxItems: 2,
     };
-  }
+   }
 
   if (allowRead) {
     actions.push("visit");
@@ -394,8 +395,7 @@ export async function getResponse(
       },
     });
 
-    const result = await model.generateContent(prompt)
-    const response = await result.response;
+    const response = await fetchWithRetry(model.generateContent.bind(model), [prompt]).then(res => res.response);
     const usage = response.usageMetadata;
     context.tokenTracker.trackUsage("agent", usage?.totalTokenCount || 0);
 
@@ -866,8 +866,7 @@ const finalize = async ({
     },
   });
 
-  const result = await model.generateContent(prompt)
-  const response = await result.response;
+  const response = await fetchWithRetry(model.generateContent.bind(model), [prompt]).then(res => res.response);
   const usage = response.usageMetadata;
   context.tokenTracker.trackUsage("agent", usage?.totalTokenCount || 0);
 
