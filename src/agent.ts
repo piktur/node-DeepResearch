@@ -19,11 +19,11 @@ import type {
   ResponseSchema,
   SchemaProperty,
   StepAction,
-  TrackerContext
+  TrackerContext,
 } from "#src/types.js";
 import { ActionTracker } from "#src/utils/action-tracker.js";
-import { sleep } from "#src/utils/sleep.js";
 import { fetchWithRetry } from "#src/utils/fetch.js";
+import { sleep } from "#src/utils/sleep.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { SafeSearchType, search as duckSearch } from "duck-duck-scrape";
@@ -105,7 +105,7 @@ function getSchema(
         "List of most important questions to fill the knowledge gaps of finding the answer to the original question",
       maxItems: 2,
     };
-   }
+  }
 
   if (allowRead) {
     actions.push("visit");
@@ -395,7 +395,10 @@ export async function getResponse(
       },
     });
 
-    const response = await fetchWithRetry(model.generateContent.bind(model), [prompt]).then(res => res.response);
+    const { response } = await fetchWithRetry(
+      model.generateContent.bind(model),
+      [prompt],
+    );
     const usage = response.usageMetadata;
     context.tokenTracker.trackUsage("agent", usage?.totalTokenCount || 0);
 
@@ -422,13 +425,15 @@ export async function getResponse(
         ...thisStep,
       });
 
-      let evaluation: EvaluationResponse
+      let evaluation: EvaluationResponse;
       try {
-        evaluation = (await evaluateAnswer(
-          currentQuestion,
-          thisStep.answer,
-          context.tokenTracker,
-        )).response
+        evaluation = (
+          await evaluateAnswer(
+            currentQuestion,
+            thisStep.answer,
+            context.tokenTracker,
+          )
+        ).response;
       } catch (err) {
         return await finalize({
           question,
@@ -446,7 +451,7 @@ export async function getResponse(
           thisStep,
           context,
           outDir,
-        })
+        });
       }
 
       if (currentQuestion === question) {
@@ -772,7 +777,7 @@ You decided to think out of the box or cut from a completely different angle.`);
     if (isAnswered) {
       return { result: thisStep, context };
     } else {
-      throw new Terminus()
+      throw new Terminus();
     }
   } catch (err) {
     return await finalize({
@@ -866,7 +871,9 @@ const finalize = async ({
     },
   });
 
-  const response = await fetchWithRetry(model.generateContent.bind(model), [prompt]).then(res => res.response);
+  const { response } = await fetchWithRetry(model.generateContent.bind(model), [
+    prompt,
+  ]);
   const usage = response.usageMetadata;
   context.tokenTracker.trackUsage("agent", usage?.totalTokenCount || 0);
 
@@ -881,7 +888,7 @@ const finalize = async ({
   console.log(thisStep);
 
   return { result: thisStep, context };
-}
+};
 
 async function storeContext(
   prompt: string,

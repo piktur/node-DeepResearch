@@ -1,13 +1,8 @@
 import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
 import type { EvaluationResponse } from "#src/types.js";
-import { sleep } from "#src/utils/sleep.js";
-import { TokenTracker } from "#src/utils/token-tracker.js";
 import { fetchWithRetry } from "#src/utils/fetch.js";
-import {
-  GoogleGenerativeAI,
-  GoogleGenerativeAIFetchError,
-  SchemaType,
-} from "@google/generative-ai";
+import { TokenTracker } from "#src/utils/token-tracker.js";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const responseSchema = {
   type: SchemaType.OBJECT,
@@ -76,8 +71,9 @@ export async function evaluateAnswer(
   tracker?: TokenTracker,
 ): Promise<{ response: EvaluationResponse; tokens: number }> | never {
   const prompt = getPrompt(question, answer);
-  const result = await fetchWithRetry(model.generateContent.bind(model), [prompt]);
-  const response = await result.response;
+  const { response } = await fetchWithRetry(model.generateContent.bind(model), [
+    prompt,
+  ]);
   const json = JSON.parse(response.text()) as EvaluationResponse;
   const tokens = response.usageMetadata?.totalTokenCount || 0;
   (tracker || new TokenTracker()).trackUsage("evaluator", tokens);

@@ -1,5 +1,6 @@
 import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
 import type { ErrorAnalysisResponse } from "#src/types.js";
+import { fetchWithRetry } from "#src/utils/fetch.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
@@ -120,8 +121,10 @@ export async function analyzeSteps(
 ): Promise<{ response: ErrorAnalysisResponse; tokens: number }> {
   try {
     const prompt = getPrompt(diaryContext);
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const { response } = await fetchWithRetry(
+      model.generateContent.bind(model),
+      [prompt],
+    );
     const usage = response.usageMetadata;
     const json = JSON.parse(response.text()) as ErrorAnalysisResponse;
     console.log("Error analysis:", {
