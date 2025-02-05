@@ -639,31 +639,36 @@ But then you realized you have asked them before. You decided to to think out of
         for (const query of keywordsQueries) {
           console.log(`Search query: ${query}`);
           let results: Awaited<ReturnType<typeof duckSearch>>;
-          if (SEARCH_PROVIDER === "duck") {
-            results = await duckSearch(query, {
-              safeSearch: SafeSearchType.STRICT,
-            });
-          } else {
-            const { response } = await braveSearch(query);
-            await sleep(STEP_SLEEP);
-            results = {
-              results: response.web.results.map((r) => ({
-                title: r.title,
-                url: r.url,
-                description: r.description,
-              })),
-            };
+          try {
+            if (SEARCH_PROVIDER === "duck") {
+              results = await duckSearch(query, {
+                safeSearch: SafeSearchType.STRICT,
+              });
+            } else {
+              const { response } = await braveSearch(query);
+              await sleep(STEP_SLEEP);
+              results = {
+                results: (response.web?.results ?? []).map((r) => ({
+                  title: r.title,
+                  url: r.url,
+                  description: r.description,
+                })),
+              };
+            }
+            const minResults = results.results.map((r) => ({
+              title: r.title,
+              url: r.url,
+              description: r.description,
+            }));
+            for (const r of minResults) {
+              allURLs[r.url] = r.title;
+            }
+            searchResults.push({ query, results: minResults });
+            allKeywords.push(query);
+          } catch (err) {
+            console.error(err);
+            results = [];
           }
-          const minResults = results.results.map((r) => ({
-            title: r.title,
-            url: r.url,
-            description: r.description,
-          }));
-          for (const r of minResults) {
-            allURLs[r.url] = r.title;
-          }
-          searchResults.push({ query, results: minResults });
-          allKeywords.push(query);
         }
         diaryContext.push(`
 At step ${step}, you took the **search** action and look for external information for the question: "${currentQuestion}".
@@ -704,25 +709,37 @@ You decided to think out of the box or cut from a completely different angle.
       }
 
       if (uniqueURLs.length > 0) {
-        const urlResults = await Promise.all(
-          uniqueURLs.map(async (url: string) => {
-            const { response, tokens } = await readUrl(
-              url,
-              JINA_API_KEY,
-              context.tokenTracker,
-            );
-            allKnowledge.push({
-              question: `What is in ${response.data?.url || "the URL"}?`,
-              answer: removeAllLineBreaks(
-                response.data?.content || "No content available",
-              ),
-              type: "url",
-            });
-            visitedURLs.push(url);
-            delete allURLs[url];
-            return { url, result: response, tokens };
-          }),
-        );
+        const urlResults = (
+          await Promise.allSettled(
+            uniqueURLs.map(async (url: string) => {
+              try {
+                const { response, tokens } = await readUrl(
+                  url,
+                  JINA_API_KEY,
+                  context.tokenTracker,
+                );
+                allKnowledge.push({
+                  question: `What is in ${response.data?.url || "the URL"}?`,
+                  answer: removeAllLineBreaks(
+                    response.data?.content || "No content available",
+                  ),
+                  type: "url",
+                });
+                visitedURLs.push(url);
+                delete allURLs[url];
+                return { url, result: response, tokens };
+              } catch (error) {
+                console.error(`Failed to read URL ${url}:`, error);
+                return null; // Or return a specific error object if needed
+              }
+            }),
+          )
+        )
+          .filter(
+            (result): result is PromiseFulfilledResult<any> =>
+              result.status === "fulfilled" && result.value !== null,
+          )
+          .map((result) => result.value);
         diaryContext.push(`
 At step ${step}, you took the **visit** action and deep dive into the following URLs:
 ${thisStep.URLTargets.join("\n")}

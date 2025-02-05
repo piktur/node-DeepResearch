@@ -3,6 +3,9 @@
  * @description Utility function for making fetch requests with retry logic.
  */
 
+import { sleep } from "#src/utils/sleep.js";
+import { GoogleGenerativeAIFetchError } from "@google/generative-ai";
+
 const HTTP_STATUS_TOO_MANY_REQUESTS = 429;
 
 interface RetryConfig {
@@ -25,22 +28,23 @@ interface RetryConfig {
 export async function fetchWithRetry<T extends (...args: any) => Promise<any>>(
   fetchFn: T,
   args: Parameters<T>,
-  config: RetryConfig = {},
-): Promise<ReturnType<T>> {
-  const {
+  {
     maxRetries = 3,
-    initialDelay = 2000,
-    shouldRetry = (error: unknown) =>
-      error instanceof Response &&
-      error.status === HTTP_STATUS_TOO_MANY_REQUESTS,
-  } = config;
-  let attempt = 0;
+    initialDelay = 7_500,
+    shouldRetry = _shouldRetry,
+  }: RetryConfig = {
+    maxRetries: 3,
+    initialDelay: 7_500,
+    shouldRetry: _shouldRetry,
+  },
+): Promise<ReturnType<T>> {
+  let attempt = 1;
   while (attempt <= maxRetries) {
     try {
       return await fetchFn(...args);
     } catch (error: unknown) {
       if (attempt < maxRetries && shouldRetry(error)) {
-        let sleepTime = initialDelay * Math.pow(2, attempt); // Exponential backoff as default
+        let delay = initialDelay * Math.pow(2, attempt); // Exponential backoff
 
         // Check for Retry-After header
         if (error instanceof Response && error.headers.has("Retry-After")) {
@@ -48,18 +52,17 @@ export async function fetchWithRetry<T extends (...args: any) => Promise<any>>(
           if (retryAfter) {
             const seconds = Number(retryAfter);
             if (!isNaN(seconds)) {
-              sleepTime = seconds * 1000;
+              delay = seconds * 1000;
             }
           }
         }
 
         console.warn(
-          `Retryable error encountered, retrying in ${
-            sleepTime / 1000
-          } seconds...`,
-          `Attempt ${attempt + 1} of ${maxRetries + 1}`,
+          `Retryable error encountered, retrying in ${delay / 1000} seconds...`,
+          `Attempt ${attempt} of ${maxRetries}`,
         );
-        await new Promise((resolve) => setTimeout(resolve, sleepTime));
+
+        await sleep(delay);
       } else if (attempt >= maxRetries) {
         console.error(
           `Max retries reached for fetch after ${attempt} attempts.`,
@@ -69,9 +72,27 @@ export async function fetchWithRetry<T extends (...args: any) => Promise<any>>(
         throw error; // Re-throw errors that are not retryable
       }
     }
+
     attempt++;
   }
+
   throw new Error(
     "Failed to fetch after maximum retries due to unexpected error.",
   ); // Should not reach here in normal control flow
 }
+
+const _shouldRetry = (error: unknown) => {
+  if (error instanceof GoogleGenerativeAIFetchError) {
+    return (
+      (error.status ||
+        (error.cause &&
+          typeof error.cause === "object" &&
+          "status" in error.cause &&
+          error.cause.status)) === HTTP_STATUS_TOO_MANY_REQUESTS
+    );
+  } else if (error instanceof Error) {
+    return error.message.includes("Too many requests");
+  }
+
+  return false;
+};

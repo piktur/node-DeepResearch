@@ -1,6 +1,6 @@
 import type { ReadResponse } from "#src/types.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
-import https from "https";
+import https from "node:https";
 
 export function readUrl(
   url: string,
@@ -29,6 +29,11 @@ export function readUrl(
       let responseData = "";
       res.on("data", (chunk) => (responseData += chunk));
       res.on("end", () => {
+        if (responseData.startsWith("error code")) {
+          reject(new Error(responseData));
+          return;
+        }
+
         const response = JSON.parse(responseData) as ReadResponse;
         console.log("Raw read response:", response);
 
