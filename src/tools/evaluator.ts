@@ -2,6 +2,7 @@ import { GEMINI_API_KEY, modelConfigs } from "#src/config.js";
 import type { EvaluationResponse } from "#src/types.js";
 import { sleep } from "#src/utils/sleep.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
+import { fetchWithRetry } from "#src/utils/fetch.js";
 import {
   GoogleGenerativeAI,
   GoogleGenerativeAIFetchError,
@@ -73,49 +74,14 @@ export async function evaluateAnswer(
   question: string,
   answer: string,
   tracker?: TokenTracker,
-  delay: number = 20_000,
-  attempt: number = 1,
-  maxRetries: number = 3,
 ): Promise<{ response: EvaluationResponse; tokens: number }> | never {
-  if (attempt > maxRetries) {
-    throw new Error("Rate limit exceeded. Failed to evaluate answer.");
-  }
-
-  try {
-    const prompt = getPrompt(question, answer);
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const usage = response.usageMetadata;
-    const json = JSON.parse(response.text()) as EvaluationResponse;
-
-    console.log("Evaluation:", {
-      definitive: json.is_definitive,
-      reason: json.reasoning,
-    });
-
-    const tokens = usage?.totalTokenCount || 0;
-    (tracker || new TokenTracker()).trackUsage("evaluator", tokens);
-
-    return { response: json, tokens };
-  } catch (error: any) {
-    if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
-      console.warn(
-        `Rate limit encountered, retrying in ${delay / 1000} seconds...`,
-        `Attempt ${attempt} of ${maxRetries}`,
-      );
-      await sleep(delay);
-
-      return await evaluateAnswer(
-        question,
-        answer,
-        tracker,
-        delay * attempt + 1,
-        attempt + 1,
-      );
-    } else {
-      throw error;
-    }
-  }
+  const prompt = getPrompt(question, answer);
+  const result = await fetchWithRetry(model.generateContent.bind(model), [prompt]);
+  const response = await result.response;
+  const json = JSON.parse(response.text()) as EvaluationResponse;
+  const tokens = response.usageMetadata?.totalTokenCount || 0;
+  (tracker || new TokenTracker()).trackUsage("evaluator", tokens);
+  return { response: json, tokens };
 }
 
 // Example usage
