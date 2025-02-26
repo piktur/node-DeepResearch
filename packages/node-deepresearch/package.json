@@ -5,13 +5,13 @@
   "private": true,
   "scripts": {
     "build": "pnpm tsc --build --incremental",
-    "dev": "node --experimental-strip-types src/agent.js",
-    "search": "node --experimental-strip-types src/test-duck.js",
-    "rewrite": "node --experimental-strip-types src/tools/query-rewriter.js",
+    "dev": "node --experimental-strip-types dist/agent.js",
+    "search": "node --experimental-strip-types dist/test-duck.js",
+    "rewrite": "node --experimental-strip-types dist/tools/query-rewriter.js",
     "lint": "pnpm eslint . --ext .ts",
     "lint:fix": "pnpm eslint . --ext .ts --fix",
-    "eval": "node --experimental-strip-types src/evals/batch-evals.js",
-    "serve": "node --experimental-strip-types src/server.js",
+    "eval": "node --experimental-strip-types dist/evals/batch-evals.js",
+    "serve": "node --experimental-strip-types dist/server.js",
     "tsc:fix": "pnpm ts-fix --tsconfig ./tsconfig.json --ignoreGitStatus --write",
     "test": "pnpm jest",
     "test:watch": "pnpm jest --watch"

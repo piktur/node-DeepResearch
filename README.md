@@ -50,7 +50,7 @@ export GEMINI_API_KEY=...  # for gemini
 # export LLM_PROVIDER=openai # for openai
 export JINA_API_KEY=jina_...  # free jina api key, get from https://jina.ai/reader
 
-npm run dev $QUERY
+pnpm run dev $QUERY
 ```
 
 ### Official Site
@@ -103,35 +103,34 @@ Query: `"who will be the biggest competitor of Jina AI"`
 
 More examples:
 
-````
-
 ```sh
-docker compose run -it --rm api pnpm dev "what is the capital of France?"
+docker compose run -it --rm dev dist/agent.js "what is the capital of France?"
+
 ````
 
 ### Example: 2-step
 
 ```sh
-docker compose run -it --rm api pnpm dev "what is the latest news from Jina AI?"
+docker compose run -it --rm dev dist/agent.js "what is the latest news from Jina AI?"
 ```
 
 ### Example: 3-step
 
 ```sh
-docker compose run -it --rm api pnpm dev "what is the twitter account of jina ai's founder"
+docker compose run -it --rm dev dist/agent.js "what is the twitter account of jina ai's founder"
 ```
 
 ### Example: 13-step, ambiguious question (no def of "big")
 
 ```sh
-docker compose run -it --rm api pnpm dev "who is bigger? cohere, jina ai, voyage?"
+docker compose run -it --rm dev dist/agent.js "who is bigger? cohere, jina ai, voyage?"
 ```
 
 ### Example: open question, research-like, long chain of thoughts
 
 ```sh
-docker compose run -it --rm api pnpm dev "who will be president of US in 2028?"
-docker compose run -it --rm api pnpm dev "what should be jina ai strategy for 2025?"
+docker compose run -it --rm dev dist/agent.js "who will be president of US in 2028?"
+docker compose run -it --rm dev dist/agent.js "what should be jina ai strategy for 2025?"
 ```
 
 ## Use Local LLM
@@ -156,11 +155,7 @@ If you have a GUI client that supports OpenAI API (e.g. [CherryStudio](https://d
 Start the server:
 
 ```bash
-# Without authentication
-npm run serve
-
-# With authentication (clients must provide this secret as Bearer token)
-npm run serve --secret=your_secret_token
+docker compose up www
 ```
 
 The server will start on http://localhost:3000 with the following endpoint:
@@ -279,7 +274,14 @@ docker run -p 3000:3000 --env GEMINI_API_KEY=your_gemini_api_key --env JINA_API_
 You can also use Docker Compose to manage multi-container applications. To start the application with Docker Compose, run:
 
 ```bash
-docker-compose up
+docker-compose up -d api
+```
+
+#### HMR
+
+```bash
+pnpm build
+docker-compose up -d dev
 ```
 
 ## How Does it Work?
@@ -340,7 +342,7 @@ I kept the evaluation simple, LLM-as-a-judge and collect some [ego questions](./
 I mainly look at 3 things: total steps, total tokens, and the correctness of the final answer.
 
 ```bash
-npm run eval ./src/evals/questions.json
+pnpm run eval ./src/evals/questions.json
 ```
 
 Here's the table comparing plain `gemini-2.0-flash` and `gemini-2.0-flash + node-deepresearch` on the ego set.

@@ -1,21 +1,49 @@
-version: "3.8"
+x-app: &app
+  environment:
+    - BRAVE_API_KEY=${BRAVE_API_KEY}
+    - DEFAULT_MODEL_NAME=${DEFAULT_MODEL_NAME}
+    - GEMINI_API_KEY=${GEMINI_API_KEY}
+    - JINA_API_KEY=${JINA_API_KEY}
+    - NODE_AUTH_TOKEN=${NODE_AUTH_TOKEN}
+    - OPENAI_API_KEY=${OPENAI_API_KEY}
+    - SERPER_API_KEY=${SERPER_API_KEY}
+  networks:
+    - host
+    - local
+  ports:
+    - "3000:3000"
 
 services:
-  app:
+  dev:
+    <<: *app
+    image: node:22.11.0-slim
+    working_dir: /app/packages/node-deepresearch
+    volumes:
+      - .:/app
+
+  www:
+    <<: *app
+    image: node:22.11.0-slim
+    working_dir: /app/packages/node-deepresearch
+    volumes:
+      - .:/app
+    command: ["./dist/server.js"]
+
+  production:
+    <<: *app
     build:
       context: .
       dockerfile: Dockerfile
       secrets:
         - node_auth_token
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - JINA_API_KEY=${JINA_API_KEY}
-      - SERPER_API_KEY=${SERPER_API_KEY}
-      - DEFAULT_MODEL_NAME=${DEFAULT_MODEL_NAME}
-      - BRAVE_API_KEY=${BRAVE_API_KEY}
-    ports:
-      - "3000:3000"
+
+networks:
+  host:
+  local:
+    external: true
+
+volumes:
+  node_modules:
 
 secrets:
   node_auth_token:
