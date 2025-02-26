@@ -5,10 +5,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      secrets:
+        - node_auth_token
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - JINA_API_KEY=${JINA_API_KEY}
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      - DEFAULT_MODEL_NAME=${DEFAULT_MODEL_NAME}
       - BRAVE_API_KEY=${BRAVE_API_KEY}
     ports:
       - "3000:3000"
+
+secrets:
+  node_auth_token:
+    environment: NODE_AUTH_TOKEN

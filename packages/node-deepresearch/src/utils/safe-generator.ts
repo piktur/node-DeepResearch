@@ -1,11 +1,11 @@
-import { z } from "zod";
+import { getModel, getToolConfig, type ToolName } from "#src/config.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
 import {
   generateObject,
   type LanguageModelUsage,
   NoObjectGeneratedError,
 } from "ai";
-import { TokenTracker } from "#src/utils/token-tracker.js";
-import { getModel, type ToolName, getToolConfig } from "#src/config.js";
+import { z } from "zod";
 
 interface GenerateObjectResult<T> {
   object: T;

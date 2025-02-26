@@ -1,6 +1,7 @@
 {
   "name": "root",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
     "build": "pnpm tsc --build --incremental",
     "dev": "node --experimental-strip-types src/agent.ts",
@@ -38,5 +39,13 @@
   "optionalDependencies": {
     "@ai-sdk/google-vertex": "^2.1.12"
   },
-  "packageManager": "pnpm@9.12.2"
+  "packageManager": "pnpm@9.12.2",
+  "engines": {
+    "node": "22.11.0",
+    "pnpm": "9.12.2"
+  },
+  "publishConfig": {
+    "@piktur:registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
 }

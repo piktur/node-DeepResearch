@@ -2,15 +2,16 @@
   "name": "@piktur/node-deepresearch",
   "version": "1.0.0",
   "main": "dist/app.js",
+  "private": true,
   "scripts": {
     "build": "pnpm tsc --build --incremental",
-    "dev": "node --experimental-strip-types src/agent.ts",
-    "search": "node --experimental-strip-types src/test-duck.ts",
-    "rewrite": "node --experimental-strip-types src/tools/query-rewriter.ts",
+    "dev": "node --experimental-strip-types src/agent.js",
+    "search": "node --experimental-strip-types src/test-duck.js",
+    "rewrite": "node --experimental-strip-types src/tools/query-rewriter.js",
     "lint": "pnpm eslint . --ext .ts",
     "lint:fix": "pnpm eslint . --ext .ts --fix",
-    "eval": "node --experimental-strip-types src/evals/batch-evals.ts",
-    "serve": "node --experimental-strip-types src/server.ts",
+    "eval": "node --experimental-strip-types src/evals/batch-evals.js",
+    "serve": "node --experimental-strip-types src/server.js",
     "tsc:fix": "pnpm ts-fix --tsconfig ./tsconfig.json --ignoreGitStatus --write",
     "test": "pnpm jest",
     "test:watch": "pnpm jest --watch"
@@ -81,5 +82,13 @@
   "optionalDependencies": {
     "@ai-sdk/google-vertex": "^2.1.12"
   },
-  "packageManager": "pnpm@9.12.2"
+  "packageManager": "pnpm@9.12.2",
+  "engines": {
+    "node": "22.11.0",
+    "pnpm": "9.12.2"
+  },
+  "publishConfig": {
+    "@piktur:registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
 }

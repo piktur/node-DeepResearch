@@ -2,6 +2,7 @@
   "name": "@piktur/jina-ai",
   "version": "1.0.0",
   "main": "dist/app.js",
+  "private": true,
   "scripts": {
     "build": "pnpm tsc --build --incremental",
     "dev": "node --experimental-strip-types dist/agent.js",
@@ -43,5 +44,14 @@
     "@types/lodash": "^4.17.15",
     "pino-pretty": "^13.0.0",
     "@piktur/ts-fix": "0.1.0"
+  },
+  "packageManager": "pnpm@9.12.2",
+  "engines": {
+    "node": "22.11.0",
+    "pnpm": "9.12.2"
+  },
+  "publishConfig": {
+    "@piktur:registry": "https://npm.pkg.github.com",
+    "access": "restricted"
   }
 }

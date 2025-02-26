@@ -20,7 +20,7 @@ interface ProviderConfig {
 }
 
 // Environment setup
-const env: EnvConfig = { ...configJson.env };
+const env: EnvConfig = { ...process.env, ...configJson.env };
 (Object.keys(env) as (keyof EnvConfig)[]).forEach((key) => {
   if (process.env[key]) {
     env[key] = process.env[key] || env[key];

@@ -1,1 +1,11 @@
-node_modules
+*
+
+!packages/*/src/
+!packages/*/config.json
+!packages/*/package.json
+!packages/*/tsconfig.json
+!.npmrc
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.json
