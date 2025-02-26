@@ -1,21 +1,11 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "resolveJsonModule": true,
-    "resolvePackageJsonExports": true,
-    "resolvePackageJsonImports": true
-  },
-  "include": ["src/**/*"],
-  "exclude": ["jina-ai/**/*", "**/__tests__/**/*"]
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**"
+  ],
+  "references": [
+    {"path": "./packages/jina-ai/tsconfig.json"},
+    {"path": "./packages/node-deepresearch/tsconfig.json"}
+  ]
 }

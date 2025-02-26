@@ -51,3 +51,4 @@ EXPOSE 3000
 
 # Set startup command
 CMD ["node", "./dist/server.js"]
+

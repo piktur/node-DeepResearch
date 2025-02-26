@@ -3,9 +3,9 @@
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "noEmit": false,
     "composite": true,
     "incremental": true,
-    "noEmit": false,
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
@@ -31,5 +31,9 @@
   ],
   "exclude": [
     "src/**/__tests__/**"
+  ],
+  "references": [
+    { "path": "../node-deepresearch/tsconfig.json" }
   ]
 }
+
