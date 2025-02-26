@@ -4,7 +4,7 @@
 
 Keep searching, reading webpages, reasoning until an answer is found (or the token budget is exceeded). Useful for deeply investigating a query.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Unlike OpenAI/Gemini/Perplexity's "Deep Research", we focus solely on **finding the right answers via our iterative process**. We don't optimize for long-form articles, that's a **completely different problem** – so if you need quick, concise answers from deep search, you're in the right place. If you're looking for AI-generated long reports like OpenAI/Gemini/Perplexity does, this isn't for you.
 
 ```mermaid
@@ -33,7 +33,7 @@ flowchart LR
 ```bash
 git clone https://github.com/jina-ai/node-DeepResearch.git
 cd node-DeepResearch
-npm install
+pnpm install
 ```
 
 [安装部署视频教程 on Youtube](https://youtu.be/vrpraFiPUyA)
@@ -43,7 +43,7 @@ It is also available on npm but not recommended for now, as the code is still un
 
 ## Usage
 
-We use Gemini (latest `gemini-2.0-flash`) / OpenAI / [LocalLLM](#use-local-llm) for reasoning, [Jina Reader](https://jina.ai/reader) for searching and reading webpages, you can get a free API key with 1M tokens from jina.ai. 
+We use Gemini (latest `gemini-2.0-flash`) / OpenAI / [LocalLLM](#use-local-llm) for reasoning, [Jina Reader](https://jina.ai/reader) for searching and reading webpages, you can get a free API key with 1M tokens from jina.ai.
 
 ```bash
 export GEMINI_API_KEY=...  # for gemini
@@ -66,7 +66,7 @@ You can also use [our official DeepSearch API](https://jina.ai/deepsearch):
 https://deepsearch.jina.ai/v1/chat/completions
 ```
 
-You can use it with any OpenAI-compatible client. 
+You can use it with any OpenAI-compatible client.
 
 For the authentication Bearer, API key, rate limit, get from https://jina.ai/deepsearch.
 
@@ -92,33 +92,45 @@ Query: `"what is the context length of readerlm-v2?"`
 2 steps; answer is correct!
 ![demo1](.github/visuals/demo3.gif)
 
-Query: `"list all employees from jina ai that u can find, as many as possible"` 
+Query: `"list all employees from jina ai that u can find, as many as possible"`
 11 steps; partially correct! but im not in the list :(
 ![demo1](.github/visuals/demo2.gif)
 
-Query: `"who will be the biggest competitor of Jina AI"` 
+Query: `"who will be the biggest competitor of Jina AI"`
 42 steps; future prediction kind, so it's arguably correct! atm Im not seeing `weaviate` as a competitor, but im open for the future "i told you so" moment.
 ![demo1](.github/visuals/demo4.gif)
 
 More examples:
 
 ```
-# example: no tool calling 
-npm run dev "1+1="
-npm run dev "what is the capital of France?"
 
-# example: 2-step
-npm run dev "what is the latest news from Jina AI?"
+```sh
+docker compose run -it --rm api pnpm dev "what is the capital of France?"
+```
 
-# example: 3-step
-npm run dev "what is the twitter account of jina ai's founder"
+### Example: 2-step
 
-# example: 13-step, ambiguious question (no def of "big")
-npm run dev "who is bigger? cohere, jina ai, voyage?"
+```sh
+docker compose run -it --rm api pnpm dev "what is the latest news from Jina AI?"
+```
 
-# example: open question, research-like, long chain of thoughts
-npm run dev "who will be president of US in 2028?"
-npm run dev "what should be jina ai strategy for 2025?"
+### Example: 3-step
+
+```sh
+docker compose run -it --rm api pnpm dev "what is the twitter account of jina ai's founder"
+```
+
+### Example: 13-step, ambiguious question (no def of "big")
+
+```sh
+docker compose run -it --rm api pnpm dev "who is bigger? cohere, jina ai, voyage?"
+```
+
+### Example: open question, research-like, long chain of thoughts
+
+```sh
+docker compose run -it --rm api pnpm dev "who will be president of US in 2028?"
+docker compose run -it --rm api pnpm dev "what should be jina ai strategy for 2025?"
 ```
 
 ## Use Local LLM
@@ -142,6 +154,7 @@ If you have a GUI client that supports OpenAI API (e.g. [CherryStudio](https://d
 ![demo1](.github/visuals/demo6.gif)
 
 Start the server:
+
 ```bash
 # Without authentication
 npm run serve
@@ -319,7 +332,7 @@ npm run eval ./src/evals/questions.json
 
 Here's the table comparing plain `gemini-2.0-flash` and `gemini-2.0-flash + node-deepresearch` on the ego set.
 
-Plain `gemini-2.0-flash` can be run by setting `tokenBudget` to zero, skipping the while-loop and directly answering the question. 
+Plain `gemini-2.0-flash` can be run by setting `tokenBudget` to zero, skipping the while-loop and directly answering the question.
 
 It should not be surprised that plain `gemini-2.0-flash` has a 0% pass rate, as I intentionally filtered out the questions that LLMs can answer.
 

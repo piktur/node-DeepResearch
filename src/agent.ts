@@ -1,33 +1,28 @@
-import {ZodObject} from 'zod';
-import {CoreAssistantMessage, CoreUserMessage} from 'ai';
-import {SEARCH_PROVIDER, STEP_SLEEP} from "./config";
-import {readUrl, removeAllLineBreaks} from "./tools/read";
+import { CoreAssistantMessage, CoreUserMessage } from 'ai';
+import { SafeSearchType, search as duckSearch } from "duck-duck-scrape";
 import fs from 'fs/promises';
-import {SafeSearchType, search as duckSearch} from "duck-duck-scrape";
-import {braveSearch} from "./tools/brave-search";
-import {rewriteQuery} from "./tools/query-rewriter";
-import {dedupQueries} from "./tools/jina-dedup";
-import {evaluateAnswer, evaluateQuestion} from "./tools/evaluator";
-import {analyzeSteps} from "./tools/error-analyzer";
-import {TokenTracker} from "./utils/token-tracker";
-import {ActionTracker} from "./utils/action-tracker";
-import {StepAction, AnswerAction, KnowledgeItem, SearchResult, EvaluationType} from "./types";
-import {TrackerContext} from "./types";
-import {search} from "./tools/jina-search";
+import { ZodObject } from 'zod';
+import { SEARCH_PROVIDER, STEP_SLEEP } from "./config";
+import { braveSearch } from "./tools/brave-search";
+import { analyzeSteps } from "./tools/error-analyzer";
+import { evaluateAnswer, evaluateQuestion } from "./tools/evaluator";
+import { dedupQueries } from "./tools/jina-dedup";
+import { search } from "./tools/jina-search";
+import { rewriteQuery } from "./tools/query-rewriter";
+import { readUrl, removeAllLineBreaks } from "./tools/read";
+import { AnswerAction, EvaluationType, KnowledgeItem, SearchResult, StepAction, TrackerContext } from "./types";
+import { ActionTracker } from "./utils/action-tracker";
+import { TokenTracker } from "./utils/token-tracker";
 // import {grounding} from "./tools/grounding";
-import {zodToJsonSchema} from "zod-to-json-schema";
-import {ObjectGeneratorSafe} from "./utils/safe-generator";
-import {CodeSandbox} from "./tools/code-sandbox";
-import {serperSearch} from './tools/serper-search';
-import {getUnvisitedURLs, normalizeUrl} from "./utils/url-tools";
-import {buildMdFromAnswer, chooseK, removeExtraLineBreaks, removeHTMLtags} from "./utils/text-tools";
-import {MAX_QUERIES_PER_STEP, MAX_REFLECT_PER_STEP, MAX_URLS_PER_STEP, Schemas} from "./utils/schemas";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import { CodeSandbox } from "./tools/code-sandbox";
+import { serperSearch } from './tools/serper-search';
+import { ObjectGeneratorSafe } from "./utils/safe-generator";
+import { MAX_QUERIES_PER_STEP, MAX_REFLECT_PER_STEP, MAX_URLS_PER_STEP, Schemas } from "./utils/schemas";
+import { buildMdFromAnswer, chooseK, removeExtraLineBreaks, removeHTMLtags } from "./utils/text-tools";
+import { getUnvisitedURLs, normalizeUrl } from "./utils/url-tools";
 
-async function sleep(ms: number) {
-  const seconds = Math.ceil(ms / 1000);
-  console.log(`Waiting ${seconds}s...`);
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+const OUT_DIR = `/tmp/${Date.now()}`;
 
 
 function getPrompt(
@@ -109,11 +104,11 @@ ${context.join('\n')}
 `)
       .join('\n\n');
 
-    const learnedStrategy = badContext.map(c => c.improvement).join('\n');
+    const learnedStrategy = badContext.map((c) => c.improvement).join("\n");
 
     sections.push(`
 Also, you have tried the following actions but failed to find the answer to the question:
-<bad-attempts>    
+<bad-attempts>
 
 ${attempts}
 
@@ -141,7 +136,7 @@ ${learnedStrategy}
 <action-visit>
 - Access and read full content from URLs
 - Must check URLs mentioned in <question>
-${urlList ? `    
+${urlList ? `
 - Review relevant URLs below for additional information
 <url-list>
 ${urlList}
@@ -166,7 +161,7 @@ ${urlList}
 <action-search>
 - Use web search to find relevant information
 - Build a search request based on the deep intention behind the original question and the expected answer format
-- Always prefer a single search request, only add another request if the original question covers multiple aspects or elements and one query is not enough, each request focus on one specific aspect of the original question 
+- Always prefer a single search request, only add another request if the original question covers multiple aspects or elements and one query is not enough, each request focus on one specific aspect of the original question
 ${allKeywords?.length ? `
 - Avoid those unsuccessful search requests and queries:
 <bad-requests>
@@ -206,7 +201,7 @@ FAILURE IS NOT AN OPTION. EXECUTE WITH EXTREME PREJUDICE! ⚡️
   if (allowReflect) {
     actionSections.push(`
 <action-reflect>
-- Critically examine <question>, <context>, <knowledge>, <bad-attempts>, and <learned-strategy> to identify gaps and the problems. 
+- Critically examine <question>, <context>, <knowledge>, <bad-attempts>, and <learned-strategy> to identify gaps and the problems.
 - Identify gaps and ask key clarifying questions that deeply related to the original question and lead to the answer
 - Ensure each reflection:
  - Cuts to core emotional truths while staying anchored to original <question>
@@ -233,7 +228,7 @@ ${actionSections.join('\n\n')}
 const allContext: StepAction[] = [];  // all steps in the current session, including those leads to wrong results
 
 function updateContext(step: any) {
-  allContext.push(step)
+  allContext.push(step);
 }
 
 
@@ -257,8 +252,9 @@ export async function getResponse(question?: string,
 
   const SchemaGen = new Schemas(question);
   const context: TrackerContext = {
-    tokenTracker: existingContext?.tokenTracker || new TokenTracker(tokenBudget),
-    actionTracker: existingContext?.actionTracker || new ActionTracker()
+    tokenTracker:
+      existingContext?.tokenTracker || new TokenTracker(tokenBudget),
+    actionTracker: existingContext?.actionTracker || new ActionTracker(),
   };
 
   let schema: ZodObject<any> = SchemaGen.getAgentSchema(true, true, true, true, true)
@@ -325,7 +321,7 @@ export async function getResponse(question?: string,
     // print allowed and chose action
     const actionsStr = [allowSearch, allowRead, allowAnswer, allowReflect, allowCoding].map((a, i) => a ? ['search', 'read', 'answer', 'reflect'][i] : null).filter(a => a).join(', ');
     console.log(`${thisStep.action} <- [${actionsStr}]`);
-    console.log(thisStep)
+    console.log(thisStep);
 
     context.actionTracker.trackAction({totalStep, thisStep, gaps, badAttempts});
 
@@ -373,13 +369,13 @@ export async function getResponse(question?: string,
           diaryContext.push(`
 At step ${step}, you took **answer** action and finally found the answer to the original question:
 
-Original question: 
+Original question:
 ${currentQuestion}
 
-Your answer: 
+Your answer:
 ${thisStep.answer}
 
-The evaluator thinks your answer is good because: 
+The evaluator thinks your answer is good because:
 ${evaluation.think}
 
 Your journey ends here. You have successfully answered the original question. Congratulations! 🎉
@@ -394,13 +390,13 @@ Your journey ends here. You have successfully answered the original question. Co
             diaryContext.push(`
 At step ${step}, you took **answer** action but evaluator thinks it is not a good answer:
 
-Original question: 
+Original question:
 ${currentQuestion}
 
-Your answer: 
+Your answer:
 ${thisStep.answer}
 
-The evaluator thinks your answer is bad because: 
+The evaluator thinks your answer is bad because:
 ${evaluation.think}
 `);
             // store the bad context and reset the diary context
@@ -439,13 +435,13 @@ ${evaluation.think}
         diaryContext.push(`
 At step ${step}, you took **answer** action. You found a good answer to the sub-question:
 
-Sub-question: 
+Sub-question:
 ${currentQuestion}
 
-Your answer: 
+Your answer:
 ${thisStep.answer}
 
-The evaluator thinks your answer is good because: 
+The evaluator thinks your answer is good because:
 ${evaluation.think}
 
 Although you solved a sub-question, you still need to find the answer to the original question. You need to keep going.
@@ -480,8 +476,8 @@ You will now figure out the answers to these sub-questions and see if they can h
 
       } else {
         diaryContext.push(`
-At step ${step}, you took **reflect** and think about the knowledge gaps. You tried to break down the question "${currentQuestion}" into gap-questions like this: ${newGapQuestions.join(', ')} 
-But then you realized you have asked them before. You decided to to think out of the box or cut from a completely different angle. 
+At step ${step}, you took **reflect** and think about the knowledge gaps. You tried to break down the question "${currentQuestion}" into gap-questions like this: ${newGapQuestions.join(', ')}
+But then you realized you have asked them before. You decided to to think out of the box or cut from a completely different angle.
 `);
         updateContext({
           totalStep,
@@ -557,8 +553,8 @@ But then you realized you have asked them before. You decided to to think out of
 
         diaryContext.push(`
 At step ${step}, you took the **search** action and look for external information for the question: "${currentQuestion}".
-In particular, you tried to search for the following keywords: "${keywordsQueries.join(', ')}".
-You found quite some information and add them to your URL list and **visit** them later when needed. 
+In particular, you tried to search for the following keywords: "${keywordsQueries.join(", ")}".
+You found quite some information and add them to your URL list and **visit** them later when needed.
 `);
 
         updateContext({
@@ -572,7 +568,7 @@ You found quite some information and add them to your URL list and **visit** the
       if (!anyResult || !keywordsQueries?.length) {
         diaryContext.push(`
 At step ${step}, you took the **search** action and look for external information for the question: "${currentQuestion}".
-In particular, you tried to search for the following keywords: ${keywordsQueries.join(', ')}. 
+In particular, you tried to search for the following keywords: ${keywordsQueries.join(', ')}.
 But then you realized you have already searched for these keywords before, no new information is returned.
 You decided to think out of the box or cut from a completely different angle.
 `);
@@ -775,12 +771,13 @@ ${JSON.stringify(zodToJsonSchema(schema), null, 2)}
     await fs.writeFile('questions.json', JSON.stringify(questions, null, 2));
     await fs.writeFile('knowledge.json', JSON.stringify(knowledge, null, 2));
   } catch (error) {
-    console.error('Context storage failed:', error);
+    console.error("Context storage failed:", error);
   }
 }
 
 
 export async function main() {
+  const start = Date.now()
   const question = process.argv[2] || "";
   const {
     result: finalStep,
@@ -793,6 +790,6 @@ export async function main() {
   tracker.tokenTracker.printSummary();
 }
 
-if (require.main === module) {
-  main().catch(console.error);
-}
+// if (import.meta.main) {
+main().catch(console.error);
+// }

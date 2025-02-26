@@ -1,14 +1,14 @@
-import { search } from '../jina-search';
 import { TokenTracker } from '../../utils/token-tracker';
+import { search } from '../jina-search';
 
-describe('search', () => {
-  it.skip('should perform search with Jina API (skipped due to insufficient balance)', async () => {
+describe("search", () => {
+  it.skip("should perform search with Jina API (skipped due to insufficient balance)", async () => {
     const tokenTracker = new TokenTracker();
     const { response } = await search('TypeScript programming', tokenTracker);
     expect(response).toBeDefined();
     expect(response.data).toBeDefined();
     if (response.data === null) {
-      throw new Error('Response data is null');
+      throw new Error("Response data is null");
     }
     expect(Array.isArray(response.data)).toBe(true);
     expect(response.data.length).toBeGreaterThan(0);

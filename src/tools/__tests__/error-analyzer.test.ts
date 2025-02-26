@@ -1,5 +1,5 @@
-import { analyzeSteps } from '../error-analyzer';
 import { LLMProvider } from '../../config';
+import { analyzeSteps } from '../error-analyzer';
 
 describe('analyzeSteps', () => {
   const providers: Array<LLMProvider> = ['openai', 'gemini'];

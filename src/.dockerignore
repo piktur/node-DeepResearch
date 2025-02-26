@@ -1,0 +1,5 @@
+.aider
+.pnpm-store
+node_modules
+tmp/
+feature/

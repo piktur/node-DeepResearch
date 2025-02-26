@@ -1,8 +1,8 @@
-import { readUrl } from '../read';
-import { TokenTracker } from '../../utils/token-tracker';
+import { readUrl } from "#src/read.js";
+import { TokenTracker } from "#src/utils/token-tracker.js";
 
-describe('readUrl', () => {
-  it.skip('should read and parse URL content (skipped due to insufficient balance)', async () => {
+describe("readUrl", () => {
+  it.skip("should read and parse URL content (skipped due to insufficient balance)", async () => {
     const tokenTracker = new TokenTracker();
     const { response } = await readUrl('https://www.typescriptlang.org', tokenTracker);
     expect(response).toHaveProperty('code');

@@ -1,6 +1,6 @@
-import {EventEmitter} from 'events';
-import {StepAction} from '../types';
-import {getI18nText} from "./text-tools";
+import { EventEmitter } from 'events';
+import { StepAction } from '../types';
+import { getI18nText } from "./text-tools";
 
 interface ActionState {
   thisStep: StepAction;
@@ -15,7 +15,7 @@ export class ActionTracker extends EventEmitter {
     thisStep: {action: 'answer', answer: '', references: [], think: ''},
     gaps: [],
     badAttempts: 0,
-    totalStep: 0
+    totalStep: 0,
   };
 
   trackAction(newState: Partial<ActionState>) {
@@ -40,7 +40,7 @@ export class ActionTracker extends EventEmitter {
       thisStep: {action: 'answer', answer: '', references: [], think: ''},
       gaps: [],
       badAttempts: 0,
-      totalStep: 0
+      totalStep: 0,
     };
   }
 }

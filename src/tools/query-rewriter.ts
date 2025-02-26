@@ -1,6 +1,6 @@
-import {SearchAction, TrackerContext} from '../types';
-import {ObjectGeneratorSafe} from "../utils/safe-generator";
-import {Schemas} from "../utils/schemas";
+import { SearchAction, TrackerContext } from '../types';
+import { ObjectGeneratorSafe } from "../utils/safe-generator";
+import { Schemas } from "../utils/schemas";
 
 
 function getPrompt(query: string, think: string): string {

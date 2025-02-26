@@ -1,7 +1,7 @@
 import https from 'https';
-import { TokenTracker } from "../utils/token-tracker";
-import { ReadResponse } from '../types';
 import { JINA_API_KEY } from "../config";
+import { ReadResponse } from '../types';
+import { TokenTracker } from "../utils/token-tracker";
 
 export function readUrl(url: string, tracker?: TokenTracker): Promise<{ response: ReadResponse }> {
   return new Promise((resolve, reject) => {
@@ -13,10 +13,10 @@ export function readUrl(url: string, tracker?: TokenTracker): Promise<{ response
     const data = JSON.stringify({ url });
 
     const options = {
-      hostname: 'r.jina.ai',
+      hostname: "r.jina.ai",
       port: 443,
-      path: '/',
-      method: 'POST',
+      path: "/",
+      method: "POST",
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${JINA_API_KEY}`,
@@ -60,14 +60,14 @@ export function readUrl(url: string, tracker?: TokenTracker): Promise<{ response
         }
 
         if (!response.data) {
-          reject(new Error('Invalid response data'));
+          reject(new Error("Invalid response data"));
           return;
         }
 
-        console.log('Read:', {
+        console.log("Read:", {
           title: response.data.title,
           url: response.data.url,
-          tokens: response.data.usage?.tokens || 0
+          tokens: response.data.usage?.tokens || 0,
         });
 
         const tokens = response.data.usage?.tokens || 0;

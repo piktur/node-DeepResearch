@@ -1,6 +1,6 @@
-import { evaluateAnswer } from '../evaluator';
-import { TokenTracker } from '../../utils/token-tracker';
 import { LLMProvider } from '../../config';
+import { TokenTracker } from '../../utils/token-tracker';
+import { evaluateAnswer } from '../evaluator';
 
 describe('evaluateAnswer', () => {
   const providers: Array<LLMProvider> = ['openai', 'gemini'];

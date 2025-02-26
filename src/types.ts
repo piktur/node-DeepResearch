@@ -1,5 +1,5 @@
 // Action Types
-import {CoreAssistantMessage, CoreUserMessage, LanguageModelUsage} from "ai";
+import { CoreAssistantMessage, CoreUserMessage, LanguageModelUsage } from "ai";
 
 type BaseAction = {
   action: "search" | "answer" | "reflect" | "visit" | "coding";
@@ -13,7 +13,9 @@ export type SearchAction = BaseAction & {
 
 export type AnswerAction = BaseAction & {
   action: "answer";
+  question: string;
   answer: string;
+  totalStep: number;
   references: Array<{
     exactQuote: string;
     url: string;
@@ -69,7 +71,7 @@ export interface SearchResponse {
     description: string;
     url: string;
     content: string;
-    usage: { tokens: number; };
+    usage: { tokens: number };
   }> | null;
   name?: string;
   message?: string;
@@ -125,7 +127,7 @@ export interface ReadResponse {
     description: string;
     url: string;
     content: string;
-    usage: { tokens: number; };
+    usage: { tokens: number };
   };
   name?: string;
   message?: string;
@@ -234,8 +236,8 @@ export interface ChatCompletionChunk {
 }
 
 // Tracker Types
-import {TokenTracker} from './utils/token-tracker';
-import {ActionTracker} from './utils/action-tracker';
+import { ActionTracker } from './utils/action-tracker';
+import { TokenTracker } from './utils/token-tracker';
 
 export interface TrackerContext {
   tokenTracker: TokenTracker;

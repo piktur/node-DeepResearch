@@ -138,3 +138,14 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+feature/
+tmp/
+.aider*
+
+test-context/
+
+feature/
+tmp/
+feature/
+tmp/

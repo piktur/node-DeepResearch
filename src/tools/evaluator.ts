@@ -1,8 +1,8 @@
-import {GenerateObjectResult} from 'ai';
-import {AnswerAction, EvaluationResponse, EvaluationType, TrackerContext} from '../types';
-import {readUrl, removeAllLineBreaks} from "./read";
-import {ObjectGeneratorSafe} from "../utils/safe-generator";
-import {Schemas} from "../utils/schemas";
+import { GenerateObjectResult } from 'ai';
+import { AnswerAction, EvaluationResponse, EvaluationType, TrackerContext } from '../types';
+import { ObjectGeneratorSafe } from "../utils/safe-generator";
+import { Schemas } from "../utils/schemas";
+import { readUrl, removeAllLineBreaks } from "./read";
 
 
 function getAttributionPrompt(question: string, answer: string, sourceContent: string): string {
@@ -92,7 +92,7 @@ function getDefinitivePrompt(question: string, answer: string): string {
   return `You are an evaluator of answer definitiveness. Analyze if the given answer provides a definitive response or not.
 
 <rules>
-First, if the answer is not a direct response to the question, it must return false. 
+First, if the answer is not a direct response to the question, it must return false.
 Definitiveness is the king! The following types of responses are NOT definitive and must return false:
   1. Expressions of uncertainty: "I don't know", "not sure", "might be", "probably"
   2. Lack of information statements: "doesn't exist", "lack of information", "could not find"
