@@ -1,11 +1,19 @@
-import { GenerateObjectResult } from 'ai';
-import { AnswerAction, EvaluationResponse, EvaluationType, TrackerContext } from '../types';
+import { GenerateObjectResult } from "ai";
+import {
+  AnswerAction,
+  EvaluationResponse,
+  EvaluationType,
+  TrackerContext,
+} from "../types";
 import { ObjectGeneratorSafe } from "../utils/safe-generator";
 import { Schemas } from "../utils/schemas";
 import { readUrl, removeAllLineBreaks } from "./read";
 
-
-function getAttributionPrompt(question: string, answer: string, sourceContent: string): string {
+function getAttributionPrompt(
+  question: string,
+  answer: string,
+  sourceContent: string,
+): string {
   return `You are an evaluator that verifies if answer content is properly attributed to and supported by the provided sources.
 
 <rules>
@@ -164,7 +172,11 @@ Question: ${question}
 Answer: ${answer}`;
 }
 
-function getFreshnessPrompt(question: string, answer: string, currentTime: string): string {
+function getFreshnessPrompt(
+  question: string,
+  answer: string,
+  currentTime: string,
+): string {
   return `You are an evaluator that analyzes if answer content is likely outdated based on mentioned dates (or implied datetime) and current system time: ${currentTime}
 
 <rules>
@@ -353,7 +365,6 @@ Question: ${question}
 Answer: ${answer}`;
 }
 
-
 function getQuestionEvaluationPrompt(question: string): string {
   return `You are an evaluator that determines if a question requires freshness, plurality, and/or completeness checks in addition to the required definitiveness check.
 
@@ -479,12 +490,12 @@ Question: ${question}
 NOTE: "think" field should be in the same language as the question`;
 }
 
-const TOOL_NAME = 'evaluator';
+const TOOL_NAME = "evaluator";
 
 export async function evaluateQuestion(
   question: string,
   trackers: TrackerContext,
-  schemaGen: Schemas
+  schemaGen: Schemas,
 ): Promise<EvaluationType[]> {
   try {
     const generator = new ObjectGeneratorSafe(trackers.tokenTracker);
@@ -495,48 +506,45 @@ export async function evaluateQuestion(
       prompt: getQuestionEvaluationPrompt(question),
     });
 
-    console.log('Question Evaluation:', result.object);
+    console.log("Question Evaluation:", result.object);
 
     // Always include definitive in types
-    const types: EvaluationType[] = ['definitive'];
-    if (result.object.needsFreshness) types.push('freshness');
-    if (result.object.needsPlurality) types.push('plurality');
-    if (result.object.needsCompleteness) types.push('completeness');
+    const types: EvaluationType[] = ["definitive"];
+    if (result.object.needsFreshness) types.push("freshness");
+    if (result.object.needsPlurality) types.push("plurality");
+    if (result.object.needsCompleteness) types.push("completeness");
 
-    console.log('Question Metrics:', types);
+    console.log("Question Metrics:", types);
     trackers?.actionTracker.trackThink(result.object.think);
 
     // Always evaluate definitive first, then freshness (if needed), then plurality (if needed)
     return types;
-
   } catch (error) {
-    console.error('Error in question evaluation:', error);
+    console.error("Error in question evaluation:", error);
     // Default to no check
     return [];
   }
 }
 
-
 async function performEvaluation<T>(
   evaluationType: EvaluationType,
   prompt: string,
   trackers: TrackerContext,
-  schemaGen: Schemas
+  schemaGen: Schemas,
 ): Promise<GenerateObjectResult<T>> {
   const generator = new ObjectGeneratorSafe(trackers.tokenTracker);
-  const result = await generator.generateObject({
+  const result = (await generator.generateObject({
     model: TOOL_NAME,
     schema: schemaGen.getEvaluatorSchema(evaluationType),
     prompt: prompt,
-  }) as GenerateObjectResult<any>;
+  })) as GenerateObjectResult<any>;
 
-  trackers.actionTracker.trackThink(result.object.think)
+  trackers.actionTracker.trackThink(result.object.think);
 
   console.log(`${evaluationType} ${TOOL_NAME}`, result.object);
 
   return result;
 }
-
 
 // Main evaluation function
 export async function evaluateAnswer(
@@ -545,49 +553,62 @@ export async function evaluateAnswer(
   evaluationTypes: EvaluationType[],
   trackers: TrackerContext,
   visitedURLs: string[] = [],
-  schemaGen: Schemas
+  schemaGen: Schemas,
 ): Promise<EvaluationResponse> {
   let result;
 
   // Only add attribution if we have valid references
-  const urls = action.references?.filter(ref => ref.url.startsWith('http') && !visitedURLs.includes(ref.url)).map(ref => ref.url) || [];
+  const urls =
+    action.references
+      ?.filter(
+        (ref) => ref.url.startsWith("http") && !visitedURLs.includes(ref.url),
+      )
+      .map((ref) => ref.url) || [];
   const uniqueNewURLs = [...new Set(urls)];
   if (uniqueNewURLs.length > 0) {
-    evaluationTypes = ['attribution', ...evaluationTypes];
+    evaluationTypes = ["attribution", ...evaluationTypes];
   }
 
   for (const evaluationType of evaluationTypes) {
-    let prompt: string = '';
+    let prompt: string = "";
     switch (evaluationType) {
-      case 'attribution': {
+      case "attribution": {
         // Safely handle references and ensure we have content
 
-        const allKnowledge = await fetchSourceContent(uniqueNewURLs, trackers, schemaGen);
+        const allKnowledge = await fetchSourceContent(
+          uniqueNewURLs,
+          trackers,
+          schemaGen,
+        );
         visitedURLs.push(...uniqueNewURLs);
 
         if (allKnowledge.trim().length === 0) {
           return {
             pass: false,
             think: `The answer does provide URL references ${JSON.stringify(uniqueNewURLs)}, but the content could not be fetched or is empty. Need to found some other references and URLs`,
-            type: 'attribution',
+            type: "attribution",
           };
         }
         prompt = getAttributionPrompt(question, action.answer, allKnowledge);
         break;
       }
 
-      case 'definitive':
+      case "definitive":
         prompt = getDefinitivePrompt(question, action.answer);
         break;
 
-      case 'freshness':
-        prompt = getFreshnessPrompt(question, action.answer, new Date().toISOString());
+      case "freshness":
+        prompt = getFreshnessPrompt(
+          question,
+          action.answer,
+          new Date().toISOString(),
+        );
         break;
 
-      case 'plurality':
+      case "plurality":
         prompt = getPluralityPrompt(question, action.answer);
         break;
-      case 'completeness':
+      case "completeness":
         prompt = getCompletenessPrompt(question, action.answer);
         break;
       default:
@@ -598,43 +619,45 @@ export async function evaluateAnswer(
         evaluationType,
         prompt,
         trackers,
-        schemaGen
+        schemaGen,
       );
 
       // fail one, return immediately
       if (!(result?.object as EvaluationResponse).pass) {
-        return (result.object as EvaluationResponse);
+        return result.object as EvaluationResponse;
       }
     }
   }
 
-  return (result!.object as EvaluationResponse);
+  return result!.object as EvaluationResponse;
 }
 
 // Helper function to fetch and combine source content
-async function fetchSourceContent(urls: string[], trackers: TrackerContext, schemaGen: Schemas): Promise<string> {
-  if (!urls.length) return '';
-  trackers.actionTracker.trackThink('read_for_verify', schemaGen.languageCode);
+async function fetchSourceContent(
+  urls: string[],
+  trackers: TrackerContext,
+  schemaGen: Schemas,
+): Promise<string> {
+  if (!urls.length) return "";
+  trackers.actionTracker.trackThink("read_for_verify", schemaGen.languageCode);
   try {
     const results = await Promise.all(
       urls.map(async (url) => {
         try {
-          const {response} = await readUrl(url, trackers.tokenTracker);
-          const content = response?.data?.content || '';
+          const { response } = await readUrl(url, trackers.tokenTracker);
+          const content = response?.data?.content || "";
           return removeAllLineBreaks(content);
         } catch (error) {
-          console.error('Error reading URL:', error);
-          return '';
+          console.error("Error reading URL:", error);
+          return "";
         }
-      })
+      }),
     );
 
     // Filter out empty results and join with proper separation
-    return results
-      .filter(content => content.trim())
-      .join('\n\n');
+    return results.filter((content) => content.trim()).join("\n\n");
   } catch (error) {
-    console.error('Error fetching source content:', error);
-    return '';
+    console.error("Error fetching source content:", error);
+    return "";
   }
 }

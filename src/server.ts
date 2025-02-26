@@ -10,6 +10,6 @@ export function startServer() {
 }
 
 // Start server if running directly
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== "test") {
   startServer();
 }

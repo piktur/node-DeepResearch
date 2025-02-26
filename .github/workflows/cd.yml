@@ -5,7 +5,7 @@ on:
       - main
       - ci-debug
     tags:
-      - '*'
+      - "*"
 
 jobs:
   build-and-push-to-gcr:
@@ -19,11 +19,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
-      - uses: 'google-github-actions/auth@v2'
+      - uses: "google-github-actions/auth@v2"
         with:
-           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_SECRET_JSON }}'
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
+          credentials_json: "${{ secrets.GCLOUD_SERVICE_ACCOUNT_SECRET_JSON }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v2"
       - name: "Docker auth"
         run: |-
           gcloud auth configure-docker us-docker.pkg.dev --quiet
@@ -63,4 +63,3 @@ jobs:
       - name: Deploy with Tag
         run: |
           gcloud run deploy node-deep-research --image us-docker.pkg.dev/research-df067/deepresearch/node-deep-research@${{steps.container.outputs.imageid}} --tag ${{ env.RELEASE_VERSION }} --region us-central1 --async
-      

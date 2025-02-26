@@ -1,12 +1,15 @@
-import https from 'https';
+import https from "https";
 import { JINA_API_KEY } from "../config";
-import { ReadResponse } from '../types';
+import { ReadResponse } from "../types";
 import { TokenTracker } from "../utils/token-tracker";
 
-export function readUrl(url: string, tracker?: TokenTracker): Promise<{ response: ReadResponse }> {
+export function readUrl(
+  url: string,
+  tracker?: TokenTracker,
+): Promise<{ response: ReadResponse }> {
   return new Promise((resolve, reject) => {
     if (!url.trim()) {
-      reject(new Error('URL cannot be empty'));
+      reject(new Error("URL cannot be empty"));
       return;
     }
 
@@ -18,31 +21,39 @@ export function readUrl(url: string, tracker?: TokenTracker): Promise<{ response
       path: "/",
       method: "POST",
       headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${JINA_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Content-Length': data.length,
-        'X-Retain-Images': 'none',
-        'X-Engine': 'direct'
-      }
+        Accept: "application/json",
+        Authorization: `Bearer ${JINA_API_KEY}`,
+        "Content-Type": "application/json",
+        "Content-Length": data.length,
+        "X-Retain-Images": "none",
+        "X-Engine": "direct",
+      },
     };
 
     const req = https.request(options, (res) => {
-      let responseData = '';
+      let responseData = "";
 
-      res.on('data', (chunk) => responseData += chunk);
+      res.on("data", (chunk) => (responseData += chunk));
 
-      res.on('end', () => {
+      res.on("end", () => {
         // Check HTTP status code first
         if (res.statusCode && res.statusCode >= 400) {
           try {
             // Try to parse error message from response if available
             const errorResponse = JSON.parse(responseData);
             if (res.statusCode === 402) {
-              reject(new Error(errorResponse.readableMessage || 'Insufficient balance'));
+              reject(
+                new Error(
+                  errorResponse.readableMessage || "Insufficient balance",
+                ),
+              );
               return;
             }
-            reject(new Error(errorResponse.readableMessage || `HTTP Error ${res.statusCode}`));
+            reject(
+              new Error(
+                errorResponse.readableMessage || `HTTP Error ${res.statusCode}`,
+              ),
+            );
           } catch (error: unknown) {
             // If parsing fails, just return the status code
             reject(new Error(`HTTP Error ${res.statusCode}`));
@@ -55,7 +66,11 @@ export function readUrl(url: string, tracker?: TokenTracker): Promise<{ response
         try {
           response = JSON.parse(responseData) as ReadResponse;
         } catch (error: unknown) {
-          reject(new Error(`Failed to parse response: ${error instanceof Error ? error.message : 'Unknown error'}`));
+          reject(
+            new Error(
+              `Failed to parse response: ${error instanceof Error ? error.message : "Unknown error"}`,
+            ),
+          );
           return;
         }
 
@@ -72,10 +87,10 @@ export function readUrl(url: string, tracker?: TokenTracker): Promise<{ response
 
         const tokens = response.data.usage?.tokens || 0;
         const tokenTracker = tracker || new TokenTracker();
-        tokenTracker.trackUsage('read', {
-            totalTokens: tokens,
-            promptTokens: url.length,
-            completionTokens: tokens
+        tokenTracker.trackUsage("read", {
+          totalTokens: tokens,
+          promptTokens: url.length,
+          completionTokens: tokens,
         });
 
         resolve({ response });
@@ -85,10 +100,10 @@ export function readUrl(url: string, tracker?: TokenTracker): Promise<{ response
     // Add timeout handling
     req.setTimeout(30000, () => {
       req.destroy();
-      reject(new Error('Request timed out'));
+      reject(new Error("Request timed out"));
     });
 
-    req.on('error', (error: Error) => {
+    req.on("error", (error: Error) => {
       reject(new Error(`Request failed: ${error.message}`));
     });
 

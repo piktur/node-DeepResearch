@@ -1,7 +1,7 @@
-import { CoreAssistantMessage, CoreUserMessage } from 'ai';
+import { CoreAssistantMessage, CoreUserMessage } from "ai";
 import { SafeSearchType, search as duckSearch } from "duck-duck-scrape";
-import fs from 'fs/promises';
-import { ZodObject } from 'zod';
+import fs from "fs/promises";
+import { ZodObject } from "zod";
 import { SEARCH_PROVIDER, STEP_SLEEP } from "./config";
 import { braveSearch } from "./tools/brave-search";
 import { analyzeSteps } from "./tools/error-analyzer";
@@ -10,20 +10,36 @@ import { dedupQueries } from "./tools/jina-dedup";
 import { search } from "./tools/jina-search";
 import { rewriteQuery } from "./tools/query-rewriter";
 import { readUrl, removeAllLineBreaks } from "./tools/read";
-import { AnswerAction, EvaluationType, KnowledgeItem, SearchResult, StepAction, TrackerContext } from "./types";
+import {
+  AnswerAction,
+  EvaluationType,
+  KnowledgeItem,
+  SearchResult,
+  StepAction,
+  TrackerContext,
+} from "./types";
 import { ActionTracker } from "./utils/action-tracker";
 import { TokenTracker } from "./utils/token-tracker";
 // import {grounding} from "./tools/grounding";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { CodeSandbox } from "./tools/code-sandbox";
-import { serperSearch } from './tools/serper-search';
+import { serperSearch } from "./tools/serper-search";
 import { ObjectGeneratorSafe } from "./utils/safe-generator";
-import { MAX_QUERIES_PER_STEP, MAX_REFLECT_PER_STEP, MAX_URLS_PER_STEP, Schemas } from "./utils/schemas";
-import { buildMdFromAnswer, chooseK, removeExtraLineBreaks, removeHTMLtags } from "./utils/text-tools";
+import {
+  MAX_QUERIES_PER_STEP,
+  MAX_REFLECT_PER_STEP,
+  MAX_URLS_PER_STEP,
+  Schemas,
+} from "./utils/schemas";
+import {
+  buildMdFromAnswer,
+  chooseK,
+  removeExtraLineBreaks,
+  removeHTMLtags,
+} from "./utils/text-tools";
 import { getUnvisitedURLs, normalizeUrl } from "./utils/url-tools";
 
 const OUT_DIR = `/tmp/${Date.now()}`;
-
 
 function getPrompt(
   context?: string[],
@@ -34,7 +50,14 @@ function getPrompt(
   allowRead: boolean = true,
   allowSearch: boolean = true,
   allowCoding: boolean = true,
-  badContext?: { question: string, answer: string, evaluation: string, recap: string; blame: string; improvement: string; }[],
+  badContext?: {
+    question: string;
+    answer: string;
+    evaluation: string;
+    recap: string;
+    blame: string;
+    improvement: string;
+  }[],
   knowledge?: KnowledgeItem[],
   allURLs?: SearchResult[],
   beastMode?: boolean,
@@ -51,7 +74,8 @@ You are an advanced AI research agent from Jina AI. You are specialized in multi
   // Add knowledge section if exists
   if (knowledge?.length) {
     const knowledgeItems = knowledge
-      .map((k, i) => `
+      .map(
+        (k, i) => `
 <knowledge-${i + 1}>
 <question>
 ${k.question}
@@ -59,14 +83,19 @@ ${k.question}
 <answer>
 ${k.answer}
 </answer>
-${k.references ? `
+${
+  k.references
+    ? `
 <references>
 ${JSON.stringify(k.references)}
 </references>
-` : ''}
+`
+    : ""
+}
 </knowledge-${i + 1}>
-`)
-      .join('\n\n');
+`,
+      )
+      .join("\n\n");
 
     sections.push(`
 You have successfully gathered some knowledge which might be useful for answering the original question. Here is the knowledge you have gathered so far:
@@ -78,13 +107,12 @@ ${knowledgeItems}
 `);
   }
 
-
   // Add context section if exists
   if (context?.length) {
     sections.push(`
 You have conducted the following actions:
 <context>
-${context.join('\n')}
+${context.join("\n")}
 
 </context>
 `);
@@ -93,7 +121,8 @@ ${context.join('\n')}
   // Add bad context section if exists
   if (badContext?.length) {
     const attempts = badContext
-      .map((c, i) => `
+      .map(
+        (c, i) => `
 <attempt-${i + 1}>
 - Question: ${c.question}
 - Answer: ${c.answer}
@@ -101,8 +130,9 @@ ${context.join('\n')}
 - Actions Recap: ${c.recap}
 - Actions Blame: ${c.blame}
 </attempt-${i + 1}>
-`)
-      .join('\n\n');
+`,
+      )
+      .join("\n\n");
 
     const learnedStrategy = badContext.map((c) => c.improvement).join("\n");
 
@@ -124,24 +154,28 @@ ${learnedStrategy}
   // Build actions section
 
   if (allowRead) {
-    let urlList = '';
+    let urlList = "";
     if (allURLs && allURLs.length > 0) {
       urlList = allURLs
-        .filter(r => 'url' in r)
-        .map(r => `  + "${r.url}": "${r.title}"`)
-        .join('\n');
+        .filter((r) => "url" in r)
+        .map((r) => `  + "${r.url}": "${r.title}"`)
+        .join("\n");
     }
 
     actionSections.push(`
 <action-visit>
 - Access and read full content from URLs
 - Must check URLs mentioned in <question>
-${urlList ? `
+${
+  urlList
+    ? `
 - Review relevant URLs below for additional information
 <url-list>
 ${urlList}
 </url-list>
-`.trim() : ''}
+`.trim()
+    : ""
+}
 </action-visit>
 `);
   }
@@ -156,18 +190,21 @@ ${urlList}
   }
 
   if (allowSearch) {
-
     actionSections.push(`
 <action-search>
 - Use web search to find relevant information
 - Build a search request based on the deep intention behind the original question and the expected answer format
 - Always prefer a single search request, only add another request if the original question covers multiple aspects or elements and one query is not enough, each request focus on one specific aspect of the original question
-${allKeywords?.length ? `
+${
+  allKeywords?.length
+    ? `
 - Avoid those unsuccessful search requests and queries:
 <bad-requests>
-${allKeywords.join('\n')}
+${allKeywords.join("\n")}
 </bad-requests>
-`.trim() : ''}
+`.trim()
+    : ""
+}
 </action-search>
 `);
   }
@@ -214,31 +251,34 @@ FAILURE IS NOT AN OPTION. EXECUTE WITH EXTREME PREJUDICE! ⚡️
   sections.push(`
 Based on the current context, you must choose one of the following actions:
 <actions>
-${actionSections.join('\n\n')}
+${actionSections.join("\n\n")}
 </actions>
 `);
 
   // Add footer
   sections.push(`Respond in valid JSON format matching exact JSON schema.`);
 
-  return removeExtraLineBreaks(sections.join('\n\n'));
+  return removeExtraLineBreaks(sections.join("\n\n"));
 }
 
-
-const allContext: StepAction[] = [];  // all steps in the current session, including those leads to wrong results
+const allContext: StepAction[] = []; // all steps in the current session, including those leads to wrong results
 
 function updateContext(step: any) {
   allContext.push(step);
 }
 
-
-export async function getResponse(question?: string,
-                                  tokenBudget: number = 1_000_000,
-                                  maxBadAttempts: number = 3,
-                                  existingContext?: Partial<TrackerContext>,
-                                  messages?: Array<CoreAssistantMessage | CoreUserMessage>
-): Promise<{ result: StepAction; context: TrackerContext; visitedURLs: string[], readURLs: string[] }> {
-
+export async function getResponse(
+  question?: string,
+  tokenBudget: number = 1_000_000,
+  maxBadAttempts: number = 3,
+  existingContext?: Partial<TrackerContext>,
+  messages?: Array<CoreAssistantMessage | CoreUserMessage>,
+): Promise<{
+  result: StepAction;
+  context: TrackerContext;
+  visitedURLs: string[];
+  readURLs: string[];
+}> {
   let step = 0;
   let totalStep = 0;
   let badAttempts = 0;
@@ -247,7 +287,7 @@ export async function getResponse(question?: string,
   if (messages && messages.length > 0) {
     question = (messages[messages.length - 1]?.content as string).trim();
   } else {
-    messages = [{role: 'user', content: question.trim()}]
+    messages = [{ role: "user", content: question.trim() }];
   }
 
   const SchemaGen = new Schemas(question);
@@ -257,11 +297,17 @@ export async function getResponse(question?: string,
     actionTracker: existingContext?.actionTracker || new ActionTracker(),
   };
 
-  let schema: ZodObject<any> = SchemaGen.getAgentSchema(true, true, true, true, true)
-  const gaps: string[] = [question];  // All questions to be answered including the orginal question
+  let schema: ZodObject<any> = SchemaGen.getAgentSchema(
+    true,
+    true,
+    true,
+    true,
+    true,
+  );
+  const gaps: string[] = [question]; // All questions to be answered including the orginal question
   const allQuestions = [question];
   const allKeywords = [];
-  const allKnowledge: KnowledgeItem[] = [];  // knowledge are intermedidate questions that are answered
+  const allKnowledge: KnowledgeItem[] = []; // knowledge are intermedidate questions that are answered
 
   const badContext = [];
   let diaryContext = [];
@@ -270,29 +316,45 @@ export async function getResponse(question?: string,
   let allowRead = true;
   let allowReflect = true;
   let allowCoding = true;
-  let system = '';
-  let thisStep: StepAction = {action: 'answer', answer: '', references: [], think: '', isFinal: false};
+  let system = "";
+  let thisStep: StepAction = {
+    action: "answer",
+    answer: "",
+    references: [],
+    think: "",
+    isFinal: false,
+  };
 
   const allURLs: Record<string, SearchResult> = {};
   const visitedURLs: string[] = [];
   const evaluationMetrics: Record<string, EvaluationType[]> = {};
-  while (context.tokenTracker.getTotalUsage().totalTokens < tokenBudget && badAttempts <= maxBadAttempts) {
+  while (
+    context.tokenTracker.getTotalUsage().totalTokens < tokenBudget &&
+    badAttempts <= maxBadAttempts
+  ) {
     // add 1s delay to avoid rate limiting
     step++;
     totalStep++;
-    const budgetPercentage = (context.tokenTracker.getTotalUsage().totalTokens / tokenBudget * 100).toFixed(2);
+    const budgetPercentage = (
+      (context.tokenTracker.getTotalUsage().totalTokens / tokenBudget) *
+      100
+    ).toFixed(2);
     console.log(`Step ${totalStep} / Budget used ${budgetPercentage}%`);
-    console.log('Gaps:', gaps);
-    allowReflect = allowReflect && (gaps.length <= 1);
-    const currentQuestion: string = gaps.length > 0 ? gaps.shift()! : question
+    console.log("Gaps:", gaps);
+    allowReflect = allowReflect && gaps.length <= 1;
+    const currentQuestion: string = gaps.length > 0 ? gaps.shift()! : question;
     if (!evaluationMetrics[currentQuestion]) {
-      evaluationMetrics[currentQuestion] =
-        await evaluateQuestion(currentQuestion, context, SchemaGen)
+      evaluationMetrics[currentQuestion] = await evaluateQuestion(
+        currentQuestion,
+        context,
+        SchemaGen,
+      );
     }
 
     // update all urls with buildURLMap
     // allowRead = allowRead && (Object.keys(allURLs).length > 0);
-    allowSearch = allowSearch && (getUnvisitedURLs(allURLs, visitedURLs).length < 50);  // disable search when too many urls already
+    allowSearch =
+      allowSearch && getUnvisitedURLs(allURLs, visitedURLs).length < 50; // disable search when too many urls already
 
     // generate prompt for this step
     system = getPrompt(
@@ -309,21 +371,41 @@ export async function getResponse(question?: string,
       getUnvisitedURLs(allURLs, visitedURLs),
       false,
     );
-    schema = SchemaGen.getAgentSchema(allowReflect, allowRead, allowAnswer, allowSearch, allowCoding)
+    schema = SchemaGen.getAgentSchema(
+      allowReflect,
+      allowRead,
+      allowAnswer,
+      allowSearch,
+      allowCoding,
+    );
     const generator = new ObjectGeneratorSafe(context.tokenTracker);
     const result = await generator.generateObject({
-      model: 'agent',
+      model: "agent",
       schema,
       system,
       messages,
     });
     thisStep = result.object as StepAction;
     // print allowed and chose action
-    const actionsStr = [allowSearch, allowRead, allowAnswer, allowReflect, allowCoding].map((a, i) => a ? ['search', 'read', 'answer', 'reflect'][i] : null).filter(a => a).join(', ');
+    const actionsStr = [
+      allowSearch,
+      allowRead,
+      allowAnswer,
+      allowReflect,
+      allowCoding,
+    ]
+      .map((a, i) => (a ? ["search", "read", "answer", "reflect"][i] : null))
+      .filter((a) => a)
+      .join(", ");
     console.log(`${thisStep.action} <- [${actionsStr}]`);
     console.log(thisStep);
 
-    context.actionTracker.trackAction({totalStep, thisStep, gaps, badAttempts});
+    context.actionTracker.trackAction({
+      totalStep,
+      thisStep,
+      gaps,
+      badAttempts,
+    });
 
     // reset allow* to true
     allowAnswer = true;
@@ -333,11 +415,11 @@ export async function getResponse(question?: string,
     // allowCoding = true;
 
     // execute the step and action
-    if (thisStep.action === 'answer') {
+    if (thisStep.action === "answer") {
       if (step === 1) {
         // LLM is so confident and answer immediately, skip all evaluations
         thisStep.isFinal = true;
-        break
+        break;
       }
 
       updateContext({
@@ -347,21 +429,23 @@ export async function getResponse(question?: string,
       });
 
       // normalize all references urls, add title to it
-      thisStep.references = thisStep.references?.map(ref => {
+      thisStep.references = thisStep.references?.map((ref) => {
         return {
           exactQuote: ref.exactQuote,
           title: allURLs[ref.url]?.title,
-          url: ref.url ? normalizeUrl(ref.url) : ''
-        }
+          url: ref.url ? normalizeUrl(ref.url) : "",
+        };
       });
 
-      context.actionTracker.trackThink('eval_first', SchemaGen.languageCode)
+      context.actionTracker.trackThink("eval_first", SchemaGen.languageCode);
 
-      const evaluation = await evaluateAnswer(currentQuestion, thisStep,
+      const evaluation = await evaluateAnswer(
+        currentQuestion,
+        thisStep,
         evaluationMetrics[currentQuestion],
         context,
         visitedURLs,
-        SchemaGen
+        SchemaGen,
       );
 
       if (currentQuestion.trim() === question) {
@@ -381,11 +465,11 @@ ${evaluation.think}
 Your journey ends here. You have successfully answered the original question. Congratulations! 🎉
 `);
           thisStep.isFinal = true;
-          break
+          break;
         } else {
           if (badAttempts >= maxBadAttempts) {
             thisStep.isFinal = false;
-            break
+            break;
           } else {
             diaryContext.push(`
 At step ${step}, you took **answer** action but evaluator thinks it is not a good answer:
@@ -400,33 +484,40 @@ The evaluator thinks your answer is bad because:
 ${evaluation.think}
 `);
             // store the bad context and reset the diary context
-            const errorAnalysis = await analyzeSteps(diaryContext, context, SchemaGen);
+            const errorAnalysis = await analyzeSteps(
+              diaryContext,
+              context,
+              SchemaGen,
+            );
 
             allKnowledge.push({
               question: currentQuestion,
               answer: thisStep.answer,
               references: thisStep.references,
-              type: 'qa',
-              updated: new Date().toISOString()
+              type: "qa",
+              updated: new Date().toISOString(),
             });
 
             badContext.push({
               question: currentQuestion,
               answer: thisStep.answer,
               evaluation: evaluation.think,
-              ...errorAnalysis
+              ...errorAnalysis,
             });
 
             if (errorAnalysis.questionsToAnswer) {
               // reranker? maybe
-              errorAnalysis.questionsToAnswer = chooseK(errorAnalysis.questionsToAnswer, MAX_REFLECT_PER_STEP);
+              errorAnalysis.questionsToAnswer = chooseK(
+                errorAnalysis.questionsToAnswer,
+                MAX_REFLECT_PER_STEP,
+              );
               gaps.push(...errorAnalysis.questionsToAnswer);
               allQuestions.push(...errorAnalysis.questionsToAnswer);
-              gaps.push(question);  // always keep the original question in the gaps
+              gaps.push(question); // always keep the original question in the gaps
             }
 
             badAttempts++;
-            allowAnswer = false;  // disable answer action in the immediate next step
+            allowAnswer = false; // disable answer action in the immediate next step
             diaryContext = [];
             step = 0;
           }
@@ -450,104 +541,135 @@ Although you solved a sub-question, you still need to find the answer to the ori
           question: currentQuestion,
           answer: thisStep.answer,
           references: thisStep.references,
-          type: 'qa',
-          updated: new Date().toISOString()
+          type: "qa",
+          updated: new Date().toISOString(),
         });
       }
-    } else if (thisStep.action === 'reflect' && thisStep.questionsToAnswer) {
-      thisStep.questionsToAnswer = chooseK((await dedupQueries(thisStep.questionsToAnswer, allQuestions, context.tokenTracker)).unique_queries, MAX_REFLECT_PER_STEP);
-      const newGapQuestions = thisStep.questionsToAnswer
+    } else if (thisStep.action === "reflect" && thisStep.questionsToAnswer) {
+      thisStep.questionsToAnswer = chooseK(
+        (
+          await dedupQueries(
+            thisStep.questionsToAnswer,
+            allQuestions,
+            context.tokenTracker,
+          )
+        ).unique_queries,
+        MAX_REFLECT_PER_STEP,
+      );
+      const newGapQuestions = thisStep.questionsToAnswer;
       if (newGapQuestions.length > 0) {
         // found new gap questions
         diaryContext.push(`
 At step ${step}, you took **reflect** and think about the knowledge gaps. You found some sub-questions are important to the question: "${currentQuestion}"
 You realize you need to know the answers to the following sub-questions:
-${newGapQuestions.map((q: string) => `- ${q}`).join('\n')}
+${newGapQuestions.map((q: string) => `- ${q}`).join("\n")}
 
 You will now figure out the answers to these sub-questions and see if they can help you find the answer to the original question.
 `);
         gaps.push(...newGapQuestions);
         allQuestions.push(...newGapQuestions);
-        gaps.push(question);  // always keep the original question in the gaps
+        gaps.push(question); // always keep the original question in the gaps
         updateContext({
           totalStep,
           ...thisStep,
         });
-
       } else {
         diaryContext.push(`
-At step ${step}, you took **reflect** and think about the knowledge gaps. You tried to break down the question "${currentQuestion}" into gap-questions like this: ${newGapQuestions.join(', ')}
+At step ${step}, you took **reflect** and think about the knowledge gaps. You tried to break down the question "${currentQuestion}" into gap-questions like this: ${newGapQuestions.join(", ")}
 But then you realized you have asked them before. You decided to to think out of the box or cut from a completely different angle.
 `);
         updateContext({
           totalStep,
           ...thisStep,
-          result: 'You have tried all possible questions and found no useful information. You must think out of the box or different angle!!!'
+          result:
+            "You have tried all possible questions and found no useful information. You must think out of the box or different angle!!!",
         });
 
         allowReflect = false;
       }
-    } else if (thisStep.action === 'search' && thisStep.searchRequests) {
+    } else if (thisStep.action === "search" && thisStep.searchRequests) {
       // dedup search requests
-      thisStep.searchRequests = chooseK((await dedupQueries(thisStep.searchRequests, [], context.tokenTracker)).unique_queries, MAX_QUERIES_PER_STEP);
+      thisStep.searchRequests = chooseK(
+        (await dedupQueries(thisStep.searchRequests, [], context.tokenTracker))
+          .unique_queries,
+        MAX_QUERIES_PER_STEP,
+      );
 
       // rewrite queries
-      let {queries: keywordsQueries} = await rewriteQuery(thisStep, context, SchemaGen);
+      let { queries: keywordsQueries } = await rewriteQuery(
+        thisStep,
+        context,
+        SchemaGen,
+      );
       // avoid exisitng searched queries
-      keywordsQueries = chooseK((await dedupQueries(keywordsQueries, allKeywords, context.tokenTracker)).unique_queries, MAX_QUERIES_PER_STEP);
+      keywordsQueries = chooseK(
+        (await dedupQueries(keywordsQueries, allKeywords, context.tokenTracker))
+          .unique_queries,
+        MAX_QUERIES_PER_STEP,
+      );
 
       let anyResult = false;
 
       if (keywordsQueries.length > 0) {
-
-
-        context.actionTracker.trackThink('search_for', SchemaGen.languageCode, {keywords: keywordsQueries.join(', ')});
+        context.actionTracker.trackThink("search_for", SchemaGen.languageCode, {
+          keywords: keywordsQueries.join(", "),
+        });
         for (const query of keywordsQueries) {
           console.log(`Search query: ${query}`);
 
-          let results: SearchResult[] = []
+          let results: SearchResult[] = [];
 
           try {
             switch (SEARCH_PROVIDER) {
-              case 'jina':
-                results = (await search(query, context.tokenTracker)).response?.data || [];
+              case "jina":
+                results =
+                  (await search(query, context.tokenTracker)).response?.data ||
+                  [];
                 break;
-              case 'duck':
-                results = (await duckSearch(query, {safeSearch: SafeSearchType.STRICT})).results;
+              case "duck":
+                results = (
+                  await duckSearch(query, { safeSearch: SafeSearchType.STRICT })
+                ).results;
                 break;
-              case 'brave':
-                results = (await braveSearch(query)).response.web?.results || [];
+              case "brave":
+                results =
+                  (await braveSearch(query)).response.web?.results || [];
                 break;
-              case 'serper':
+              case "serper":
                 results = (await serperSearch(query)).response.organic || [];
                 break;
               default:
                 results = [];
             }
             if (results.length === 0) {
-              throw new Error('No results found');
+              throw new Error("No results found");
             }
           } catch (error) {
-            console.error(`${SEARCH_PROVIDER} search failed for query "${query}":`, error);
-            continue
+            console.error(
+              `${SEARCH_PROVIDER} search failed for query "${query}":`,
+              error,
+            );
+            continue;
           } finally {
-            await sleep(STEP_SLEEP)
+            await sleep(STEP_SLEEP);
           }
 
-          const minResults = (results).map(r => ({
+          const minResults = results.map((r) => ({
             title: r.title,
-            url: normalizeUrl('url' in r ? r.url : r.link),
-            description: 'description' in r ? r.description : r.snippet
+            url: normalizeUrl("url" in r ? r.url : r.link),
+            description: "description" in r ? r.description : r.snippet,
           }));
 
-          minResults.forEach(r => allURLs[r.url] = r);
+          minResults.forEach((r) => (allURLs[r.url] = r));
           allKeywords.push(query);
 
           allKnowledge.push({
             question: `What do Internet say about "${query}"?`,
-            answer: removeHTMLtags(minResults.map(r => r.description).join('; ')),
-            type: 'side-info',
-            updated: new Date().toISOString()
+            answer: removeHTMLtags(
+              minResults.map((r) => r.description).join("; "),
+            ),
+            type: "side-info",
+            updated: new Date().toISOString(),
           });
         }
 
@@ -561,14 +683,14 @@ You found quite some information and add them to your URL list and **visit** the
           totalStep,
           question: currentQuestion,
           ...thisStep,
-          result: result
+          result: result,
         });
         anyResult = true;
       }
       if (!anyResult || !keywordsQueries?.length) {
         diaryContext.push(`
 At step ${step}, you took the **search** action and look for external information for the question: "${currentQuestion}".
-In particular, you tried to search for the following keywords: ${keywordsQueries.join(', ')}.
+In particular, you tried to search for the following keywords: ${keywordsQueries.join(", ")}.
 But then you realized you have already searched for these keywords before, no new information is returned.
 You decided to think out of the box or cut from a completely different angle.
 `);
@@ -576,68 +698,78 @@ You decided to think out of the box or cut from a completely different angle.
         updateContext({
           totalStep,
           ...thisStep,
-          result: 'You have tried all possible queries and found no new information. You must think out of the box or different angle!!!'
+          result:
+            "You have tried all possible queries and found no new information. You must think out of the box or different angle!!!",
         });
 
         allowSearch = false;
       }
-    } else if (thisStep.action === 'visit' && thisStep.URLTargets?.length) {
+    } else if (thisStep.action === "visit" && thisStep.URLTargets?.length) {
       // normalize URLs
-      thisStep.URLTargets = thisStep.URLTargets.map(url => normalizeUrl(url));
-      thisStep.URLTargets = chooseK(thisStep.URLTargets.filter(url => !visitedURLs.includes(url)), MAX_URLS_PER_STEP)
+      thisStep.URLTargets = thisStep.URLTargets.map((url) => normalizeUrl(url));
+      thisStep.URLTargets = chooseK(
+        thisStep.URLTargets.filter((url) => !visitedURLs.includes(url)),
+        MAX_URLS_PER_STEP,
+      );
 
       const uniqueURLs = thisStep.URLTargets;
 
       if (uniqueURLs.length > 0) {
-        context.actionTracker.trackThink('read_for', SchemaGen.languageCode, {urls: uniqueURLs.join(', ')});
+        context.actionTracker.trackThink("read_for", SchemaGen.languageCode, {
+          urls: uniqueURLs.join(", "),
+        });
 
         const urlResults = await Promise.all(
-          uniqueURLs.map(async url => {
+          uniqueURLs.map(async (url) => {
             try {
-              const {response} = await readUrl(url, context.tokenTracker);
-              const {data} = response;
+              const { response } = await readUrl(url, context.tokenTracker);
+              const { data } = response;
 
               // Early return if no valid data
               if (!data?.url || !data?.content) {
-                throw new Error('No content found');
+                throw new Error("No content found");
               }
 
               allKnowledge.push({
                 question: `What is in ${data.url}?`,
                 answer: removeAllLineBreaks(data.content),
                 references: [data.url],
-                type: 'url',
-                updated: new Date().toISOString()
+                type: "url",
+                updated: new Date().toISOString(),
               });
 
-              return {url, result: response};
+              return { url, result: response };
             } catch (error) {
-              console.error('Error reading URL:', error);
+              console.error("Error reading URL:", error);
               return null;
             } finally {
               visitedURLs.push(url);
             }
-          })
-        ).then(results => results.filter(Boolean));
+          }),
+        ).then((results) => results.filter(Boolean));
 
         const success = urlResults.length > 0;
-        diaryContext.push(success
-          ? `At step ${step}, you took the **visit** action and deep dive into the following URLs:
-${urlResults.map(r => r?.url).join('\n')}
+        diaryContext.push(
+          success
+            ? `At step ${step}, you took the **visit** action and deep dive into the following URLs:
+${urlResults.map((r) => r?.url).join("\n")}
 You found some useful information on the web and add them to your knowledge for future reference.`
-          : `At step ${step}, you took the **visit** action and try to visit some URLs but failed to read the content. You need to think out of the box or cut from a completely different angle.`
+            : `At step ${step}, you took the **visit** action and try to visit some URLs but failed to read the content. You need to think out of the box or cut from a completely different angle.`,
         );
 
         updateContext({
           totalStep,
-          ...(success ? {
-            question: currentQuestion,
-            ...thisStep,
-            result: urlResults
-          } : {
-            ...thisStep,
-            result: 'You have tried all possible URLs and found no new information. You must think out of the box or different angle!!!'
-          })
+          ...(success
+            ? {
+                question: currentQuestion,
+                ...thisStep,
+                result: urlResults,
+              }
+            : {
+                ...thisStep,
+                result:
+                  "You have tried all possible URLs and found no new information. You must think out of the box or different angle!!!",
+              }),
         });
 
         allowRead = success;
@@ -649,21 +781,26 @@ You decided to think out of the box or cut from a completely different angle.`);
         updateContext({
           totalStep,
           ...thisStep,
-          result: 'You have visited all possible URLs and found no new information. You must think out of the box or different angle!!!'
+          result:
+            "You have visited all possible URLs and found no new information. You must think out of the box or different angle!!!",
         });
 
         allowRead = false;
       }
-    } else if (thisStep.action === 'coding' && thisStep.codingIssue) {
-      const sandbox = new CodeSandbox({allContext, visitedURLs, allURLs, allKnowledge}, context, SchemaGen);
+    } else if (thisStep.action === "coding" && thisStep.codingIssue) {
+      const sandbox = new CodeSandbox(
+        { allContext, visitedURLs, allURLs, allKnowledge },
+        context,
+        SchemaGen,
+      );
       try {
         const result = await sandbox.solve(thisStep.codingIssue);
         allKnowledge.push({
           question: `What is the solution to the coding issue: ${thisStep.codingIssue}?`,
           answer: result.solution.output,
           sourceCode: result.solution.code,
-          type: 'coding',
-          updated: new Date().toISOString()
+          type: "coding",
+          updated: new Date().toISOString(),
         });
         diaryContext.push(`
 At step ${step}, you took the **coding** action and try to solve the coding issue: ${thisStep.codingIssue}.
@@ -672,10 +809,10 @@ You found the solution and add it to your knowledge for future reference.
         updateContext({
           totalStep,
           ...thisStep,
-          result: result
+          result: result,
         });
       } catch (error) {
-        console.error('Error solving coding issue:', error);
+        console.error("Error solving coding issue:", error);
         diaryContext.push(`
 At step ${step}, you took the **coding** action and try to solve the coding issue: ${thisStep.codingIssue}.
 But unfortunately, you failed to solve the issue. You need to think out of the box or cut from a completely different angle.
@@ -683,21 +820,31 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
         updateContext({
           totalStep,
           ...thisStep,
-          result: 'You have tried all possible solutions and found no new information. You must think out of the box or different angle!!!'
+          result:
+            "You have tried all possible solutions and found no new information. You must think out of the box or different angle!!!",
         });
       } finally {
         allowCoding = false;
       }
     }
 
-
-    await storeContext(system, schema, [allContext, allKeywords, allQuestions, allKnowledge], totalStep);
+    await storeContext(
+      system,
+      schema,
+      [allContext, allKeywords, allQuestions, allKnowledge],
+      totalStep,
+    );
     await sleep(STEP_SLEEP);
   }
 
-  await storeContext(system, schema, [allContext, allKeywords, allQuestions, allKnowledge], totalStep);
+  await storeContext(
+    system,
+    schema,
+    [allContext, allKeywords, allQuestions, allKnowledge],
+    totalStep,
+  );
   if (!(thisStep as AnswerAction).isFinal) {
-    console.log('Enter Beast mode!!!')
+    console.log("Enter Beast mode!!!");
     // any answer is better than no answer, humanity last resort
     step++;
     totalStep++;
@@ -719,30 +866,46 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
     schema = SchemaGen.getAgentSchema(false, false, true, false, false);
     const generator = new ObjectGeneratorSafe(context.tokenTracker);
     const result = await generator.generateObject({
-      model: 'agentBeastMode',
+      model: "agentBeastMode",
       schema,
       system,
-      messages
+      messages,
     });
     thisStep = result.object as AnswerAction;
     (thisStep as AnswerAction).isFinal = true;
-    context.actionTracker.trackAction({totalStep, thisStep, gaps, badAttempts});
+    context.actionTracker.trackAction({
+      totalStep,
+      thisStep,
+      gaps,
+      badAttempts,
+    });
   }
 
-  (thisStep as AnswerAction).mdAnswer = buildMdFromAnswer((thisStep as AnswerAction))
-  console.log(thisStep)
+  (thisStep as AnswerAction).mdAnswer = buildMdFromAnswer(
+    thisStep as AnswerAction,
+  );
+  console.log(thisStep);
 
-  await storeContext(system, schema, [allContext, allKeywords, allQuestions, allKnowledge], totalStep);
+  await storeContext(
+    system,
+    schema,
+    [allContext, allKeywords, allQuestions, allKnowledge],
+    totalStep,
+  );
   return {
     result: thisStep,
     context,
     visitedURLs: [...new Set([...visitedURLs, ...Object.keys(allURLs)])],
     readURLs: visitedURLs,
   };
-
 }
 
-async function storeContext(prompt: string, schema: any, memory: any[][], step: number) {
+async function storeContext(
+  prompt: string,
+  schema: any,
+  memory: any[][],
+  step: number,
+) {
   if ((process as any).asyncLocalContext?.available?.()) {
     const [context, keywords, questions, knowledge] = memory;
     (process as any).asyncLocalContext.ctx.promptContext = {
@@ -752,40 +915,46 @@ async function storeContext(prompt: string, schema: any, memory: any[][], step: 
       keywords,
       questions,
       knowledge,
-      step
+      step,
     };
     return;
   }
 
   try {
-    await fs.writeFile(`prompt-${step}.txt`, `
+    await fs.writeFile(
+      `prompt-${step}.txt`,
+      `
 Prompt:
 ${prompt}
 
 JSONSchema:
 ${JSON.stringify(zodToJsonSchema(schema), null, 2)}
-`);
+`,
+    );
     const [context, keywords, questions, knowledge] = memory;
-    await fs.writeFile('context.json', JSON.stringify(context, null, 2));
-    await fs.writeFile('queries.json', JSON.stringify(keywords, null, 2));
-    await fs.writeFile('questions.json', JSON.stringify(questions, null, 2));
-    await fs.writeFile('knowledge.json', JSON.stringify(knowledge, null, 2));
+    await fs.writeFile("context.json", JSON.stringify(context, null, 2));
+    await fs.writeFile("queries.json", JSON.stringify(keywords, null, 2));
+    await fs.writeFile("questions.json", JSON.stringify(questions, null, 2));
+    await fs.writeFile("knowledge.json", JSON.stringify(knowledge, null, 2));
   } catch (error) {
     console.error("Context storage failed:", error);
   }
 }
 
-
 export async function main() {
-  const start = Date.now()
+  const start = Date.now();
   const question = process.argv[2] || "";
   const {
     result: finalStep,
     context: tracker,
-    visitedURLs: visitedURLs
-  } = await getResponse(question) as { result: AnswerAction; context: TrackerContext; visitedURLs: string[] };
-  console.log('Final Answer:', finalStep.answer);
-  console.log('Visited URLs:', visitedURLs);
+    visitedURLs: visitedURLs,
+  } = (await getResponse(question)) as {
+    result: AnswerAction;
+    context: TrackerContext;
+    visitedURLs: string[];
+  };
+  console.log("Final Answer:", finalStep.answer);
+  console.log("Visited URLs:", visitedURLs);
 
   tracker.tokenTracker.printSummary();
 }

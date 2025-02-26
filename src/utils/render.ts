@@ -7,19 +7,23 @@ import type { StepAction } from "#src/types.js";
  * @param {Array<object>} results - An array of result objects, each containing question, answer, thoughts, and references.
  * @returns {string} - The rendered document in Markdown format.
  */
-export function render(results: (StepAction)[], usage: {
-  total: number
-  breakdown: {
-    total: number
-  }
-}, duration: number) {
+export function render(
+  results: StepAction[],
+  usage: {
+    total: number;
+    breakdown: {
+      total: number;
+    };
+  },
+  duration: number,
+) {
   if (!Array.isArray(results) || results.length === 0) {
     return "Error: Invalid input. Expected a non-empty array of results.";
   }
 
-  const lastResult = results.at(-1)!
+  const lastResult = results.at(-1)!;
 
-  if (lastResult.action !== 'answer') {
+  if (lastResult.action !== "answer") {
     return "Non definitive result.";
   }
 
@@ -45,8 +49,13 @@ ${thoughts}
 
 `;
 
-    (references ?? []).reduce((markdown, e, i) => markdown + `
-[^${i + 1}]: ${e.exactQuote} [${e.url}](${e.url})`, markdown);
+  (references ?? []).reduce(
+    (markdown, e, i) =>
+      markdown +
+      `
+[^${i + 1}]: ${e.exactQuote} [${e.url}](${e.url})`,
+    markdown,
+  );
 
-  return markdown
+  return markdown;
 }

@@ -14,7 +14,7 @@
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
     "resolvePackageJsonExports": true,
-    "resolvePackageJsonImports": true,
+    "resolvePackageJsonImports": true
   },
   "include": ["src/**/*"],
   "exclude": ["jina-ai/**/*", "**/__tests__/**/*"]

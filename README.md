@@ -40,7 +40,6 @@ pnpm install
 
 It is also available on npm but not recommended for now, as the code is still under active development.
 
-
 ## Usage
 
 We use Gemini (latest `gemini-2.0-flash`) / OpenAI / [LocalLLM](#use-local-llm) for reasoning, [Jina Reader](https://jina.ai/reader) for searching and reading webpages, you can get a free API key with 1M tokens from jina.ai.
@@ -73,6 +72,7 @@ For the authentication Bearer, API key, rate limit, get from https://jina.ai/dee
 #### Client integration guidelines
 
 If you are building a web/local/mobile client that uses `Jina DeepSearch API`, here are some design guidelines:
+
 - Our API is fully compatible with [OpenAI API schema](https://platform.openai.com/docs/api-reference/chat/create), this should greatly simplify the integration process. The model name is `jina-deepsearch-v1`.
 - Our DeepSearch API is a reasoning+search grounding LLM, so it's best for questions that require deep reasoning and search.
 - Two special tokens are introduced `<think>...</think>`. Please render them with care.
@@ -82,6 +82,7 @@ If you are building a web/local/mobile client that uses `Jina DeepSearch API`, h
 - [Download Jina AI logo here](https://jina.ai/logo-Jina-1024.zip)
 
 ## Demo
+
 > was recorded with `gemini-1.5-flash`, the latest `gemini-2.0-flash` leads to much better results!
 
 Query: `"what is the latest blog post's title from jina ai?"`
@@ -102,11 +103,11 @@ Query: `"who will be the biggest competitor of Jina AI"`
 
 More examples:
 
-```
+````
 
 ```sh
 docker compose run -it --rm api pnpm dev "what is the capital of France?"
-```
+````
 
 ### Example: 2-step
 
@@ -146,7 +147,6 @@ export OPENAI_API_KEY=whatever  # random string would do, as we don't use it (un
 export DEFAULT_MODEL_NAME=qwen2.5-7b  # your local llm model name
 ```
 
-
 ## OpenAI-Compatible Server API
 
 If you have a GUI client that supports OpenAI API (e.g. [CherryStudio](https://docs.cherry-ai.com/), [Chatbox](https://github.com/Bin-Huang/chatbox)) , you can simply config it to use this server.
@@ -166,6 +166,7 @@ npm run serve --secret=your_secret_token
 The server will start on http://localhost:3000 with the following endpoint:
 
 ### POST /v1/chat/completions
+
 ```bash
 # Without authentication
 curl http://localhost:3000/v1/chat/completions \
@@ -197,6 +198,7 @@ curl http://localhost:3000/v1/chat/completions \
 ```
 
 Response format:
+
 ```json
 {
   "id": "chatcmpl-123",
@@ -204,15 +206,17 @@ Response format:
   "created": 1677652288,
   "model": "jina-deepsearch-v1",
   "system_fingerprint": "fp_44709d6fcb",
-  "choices": [{
-    "index": 0,
-    "message": {
-      "role": "assistant",
-      "content": "YOUR FINAL ANSWER"
-    },
-    "logprobs": null,
-    "finish_reason": "stop"
-  }],
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "YOUR FINAL ANSWER"
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
   "usage": {
     "prompt_tokens": 9,
     "completion_tokens": 12,
@@ -222,6 +226,7 @@ Response format:
 ```
 
 For streaming responses (stream: true), the server sends chunks in this format:
+
 ```json
 {
   "id": "chatcmpl-123",
@@ -229,18 +234,21 @@ For streaming responses (stream: true), the server sends chunks in this format:
   "created": 1694268190,
   "model": "jina-deepsearch-v1",
   "system_fingerprint": "fp_44709d6fcb",
-  "choices": [{
-    "index": 0,
-    "delta": {
-      "content": "..."
-    },
-    "logprobs": null,
-    "finish_reason": null
-  }]
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "content": "..."
+      },
+      "logprobs": null,
+      "finish_reason": null
+    }
+  ]
 }
 ```
 
 Note: The think content in streaming responses is wrapped in XML tags:
+
 ```
 <think>
 [thinking steps...]
@@ -248,23 +256,28 @@ Note: The think content in streaming responses is wrapped in XML tags:
 [final answer]
 ```
 
-
 ## Docker Setup
 
 ### Build Docker Image
+
 To build the Docker image for the application, run the following command:
+
 ```bash
 docker build -t deepresearch:latest .
 ```
 
 ### Run Docker Container
+
 To run the Docker container, use the following command:
+
 ```bash
 docker run -p 3000:3000 --env GEMINI_API_KEY=your_gemini_api_key --env JINA_API_KEY=your_jina_api_key deepresearch:latest
 ```
 
 ### Docker Compose
+
 You can also use Docker Compose to manage multi-container applications. To start the application with Docker Compose, run:
+
 ```bash
 docker-compose up
 ```
@@ -336,14 +349,14 @@ Plain `gemini-2.0-flash` can be run by setting `tokenBudget` to zero, skipping t
 
 It should not be surprised that plain `gemini-2.0-flash` has a 0% pass rate, as I intentionally filtered out the questions that LLMs can answer.
 
-| Metric | gemini-2.0-flash | #188f1bb |
-|--------|------------------|----------|
-| Pass Rate | 0% | 75%      |
-| Average Steps | 1 | 4        |
-| Maximum Steps | 1 | 13       |
-| Minimum Steps | 1 | 2        |
-| Median Steps | 1 | 3        |
-| Average Tokens | 428 | 68,574   |
-| Median Tokens | 434 | 31,541   |
-| Maximum Tokens | 463 | 363,655  |
-| Minimum Tokens | 374 | 7,963    |
+| Metric         | gemini-2.0-flash | #188f1bb |
+| -------------- | ---------------- | -------- |
+| Pass Rate      | 0%               | 75%      |
+| Average Steps  | 1                | 4        |
+| Maximum Steps  | 1                | 13       |
+| Minimum Steps  | 1                | 2        |
+| Median Steps   | 1                | 3        |
+| Average Tokens | 428              | 68,574   |
+| Median Tokens  | 434              | 31,541   |
+| Maximum Tokens | 463              | 363,655  |
+| Minimum Tokens | 374              | 7,963    |

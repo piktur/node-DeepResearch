@@ -1,8 +1,8 @@
-import { LLMProvider } from '../../config';
-import { analyzeSteps } from '../error-analyzer';
+import { LLMProvider } from "../../config";
+import { analyzeSteps } from "../error-analyzer";
 
-describe('analyzeSteps', () => {
-  const providers: Array<LLMProvider> = ['openai', 'gemini'];
+describe("analyzeSteps", () => {
+  const providers: Array<LLMProvider> = ["openai", "gemini"];
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -14,17 +14,20 @@ describe('analyzeSteps', () => {
     process.env = originalEnv;
   });
 
-  providers.forEach(provider => {
+  providers.forEach((provider) => {
     describe(`with ${provider} provider`, () => {
       beforeEach(() => {
         process.env.LLM_PROVIDER = provider;
       });
 
-      it('should analyze error steps', async () => {
-        const { response } = await analyzeSteps(['Step 1: Search failed', 'Step 2: Invalid query']);
-        expect(response).toHaveProperty('recap');
-        expect(response).toHaveProperty('blame');
-        expect(response).toHaveProperty('improvement');
+      it("should analyze error steps", async () => {
+        const { response } = await analyzeSteps([
+          "Step 1: Search failed",
+          "Step 2: Invalid query",
+        ]);
+        expect(response).toHaveProperty("recap");
+        expect(response).toHaveProperty("blame");
+        expect(response).toHaveProperty("improvement");
       }, 30000);
     });
   });
