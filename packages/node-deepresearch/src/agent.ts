@@ -40,8 +40,6 @@ import {
 import { getUnvisitedURLs, normalizeUrl } from "#src/utils/url-tools.js";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-const OUT_DIR = `/tmp/${Date.now()}`;
-
 function getPrompt(
   context?: string[],
   allQuestions?: string[],

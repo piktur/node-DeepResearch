@@ -30,11 +30,11 @@ export async function fetchWithRetry<T extends (...args: any) => Promise<any>>(
   args: Parameters<T>,
   {
     maxRetries = 3,
-    initialDelay = 7_500,
+    initialDelay = 30_000,
     shouldRetry = _shouldRetry,
   }: RetryConfig = {
     maxRetries: 3,
-    initialDelay: 7_500,
+    initialDelay: 30_000,
     shouldRetry: _shouldRetry,
   },
 ): Promise<ReturnType<T>> {

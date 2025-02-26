@@ -38,6 +38,8 @@ export class ObjectGeneratorSafe {
         model: getModel(model),
         schema,
         prompt,
+        // Max duration with exponential backoff will be ~136.5 minutes
+        maxRetries: 12,
         system,
         messages,
         maxTokens: getToolConfig(model).maxTokens,
