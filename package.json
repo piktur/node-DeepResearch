@@ -8,7 +8,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b",
     "dev": "node --experimental-strip-types src/agent.ts",
     "search": "node --experimental-strip-types src/test-duck.ts",
     "rewrite": "node --experimental-strip-types src/tools/query-rewriter.ts",
