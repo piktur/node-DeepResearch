@@ -1,5 +1,5 @@
 import type { AnswerAction } from "#src/types.js";
-import i18nJSON from "#src/utils/i18n.json" assert { type: "json" };
+import i18nJSON from "#src/utils/i18n.json" with { type: "json" };
 
 export function buildMdFromAnswer(answer: AnswerAction) {
   // Standard footnote regex

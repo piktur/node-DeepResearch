@@ -2,7 +2,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI, type OpenAIProviderSettings } from "@ai-sdk/openai";
 import dotenv from "dotenv";
 import { ProxyAgent, setGlobalDispatcher } from "undici";
-import configJson from "../config.json" assert { type: "json" };
+import configJson from "../config.json" with { type: "json" };
 
 // Load environment variables
 dotenv.config();

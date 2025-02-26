@@ -1,32 +1,30 @@
 {
-  "name": "node-deepresearch",
+  "name": "@piktur/node-deepresearch",
   "version": "1.0.0",
   "main": "dist/app.js",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
-    "build": "tsc",
+    "build": "pnpm tsc --build --incremental",
     "dev": "node --experimental-strip-types src/agent.ts",
     "search": "node --experimental-strip-types src/test-duck.ts",
     "rewrite": "node --experimental-strip-types src/tools/query-rewriter.ts",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "pnpm eslint . --ext .ts",
+    "lint:fix": "pnpm eslint . --ext .ts --fix",
     "eval": "node --experimental-strip-types src/evals/batch-evals.ts",
     "serve": "node --experimental-strip-types src/server.ts",
     "tsc:fix": "pnpm ts-fix --tsconfig ./tsconfig.json --ignoreGitStatus --write",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "pnpm jest",
+    "test:watch": "pnpm jest --watch"
   },
-  "keywords": [],
   "author": "Jina AI",
   "license": "Apache-2.0",
   "description": "",
   "type": "module",
   "imports": {
-    "#src/*.js": "./src/*.ts",
+    "#src/*.js": {
+      "development": "./src/*.ts",
+      "production": "./src/*.ts",
+      "import": "./dist/*.js"
+    },
     "#src/*.json": "./src/*.json"
   },
   "exports": {
@@ -41,6 +39,12 @@
       "production": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./app.js": {
+      "development": "./src/app.ts",
+      "production": "./src/app.ts",
+      "types": "./dist/app.d.ts",
+      "import": "./dist/app.js"
     }
   },
   "dependencies": {
@@ -54,14 +58,14 @@
     "zod-to-json-schema": "^3.24.1",
     "dotenv": "16.4.7",
     "duck-duck-scrape": "^2.2.7",
-    "express": "^4.21.2",
+    "express": "catalog:",
     "undici": "^7.3.0"
   },
   "devDependencies": {
     "@piktur/ts-fix": "0.1.0",
     "@types/commander": "^2.12.0",
     "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
+    "@types/express": "catalog:",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.10",
     "@types/node-fetch": "^2.6.12",
@@ -71,8 +75,6 @@
     "eslint": "^8.56.0",
     "jest": "^29.7.0",
     "supertest": "^7.0.0",
-    "lefthook": "1.8.1",
-    "prettier": "3.4.2",
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.3"
   },

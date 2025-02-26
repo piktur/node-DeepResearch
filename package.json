@@ -1,45 +1,23 @@
 {
-  "name": "node-deepresearch",
+  "name": "root",
   "version": "1.0.0",
-  "main": "dist/app.js",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "pnpm tsc --build --incremental",
     "dev": "node --experimental-strip-types src/agent.ts",
     "search": "node --experimental-strip-types src/test-duck.ts",
     "rewrite": "node --experimental-strip-types src/tools/query-rewriter.ts",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "pnpm eslint . --ext .ts",
+    "lint:fix": "pnpm eslint . --ext .ts --fix",
     "eval": "node --experimental-strip-types src/evals/batch-evals.ts",
     "serve": "node --experimental-strip-types src/server.ts",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "pnpm jest",
+    "test:watch": "pnpm jest --watch"
   },
-  "keywords": [],
   "author": "Jina AI",
   "license": "Apache-2.0",
   "description": "",
   "type": "module",
-  "dependencies": {
-    "@ai-sdk/google": "^1.0.0",
-    "@ai-sdk/openai": "^1.1.9",
-    "ai": "^4.1.26",
-    "axios": "^1.7.9",
-    "commander": "^13.1.0",
-    "cors": "^2.8.5",
-    "dotenv": "16.4.7",
-    "duck-duck-scrape": "^2.2.7",
-    "express": "^4.21.2",
-    "undici": "^7.3.0",
-    "zod": "^3.22.4",
-    "zod-to-json-schema": "^3.24.1"
-  },
   "devDependencies": {
-    "@types/commander": "^2.12.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",

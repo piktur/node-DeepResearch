@@ -1,40 +1,40 @@
 {
-  "name": "jina-ai",
+  "name": "@piktur/jina-ai",
   "version": "1.0.0",
   "main": "dist/app.js",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
-    "build": "tsc",
-    "dev": "node --experimental-strip-types src/agent.ts",
-    "search": "node --experimental-strip-types src/test-duck.ts",
-    "rewrite": "node --experimental-strip-types src/tools/query-rewriter.ts",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "serve": "node --experimental-strip-types src/server.ts",
-    "eval": "node --experimental-strip-types src/evals/batch-evals.ts",
+    "build": "pnpm tsc --build --incremental",
+    "dev": "node --experimental-strip-types dist/agent.js",
+    "search": "node --experimental-strip-types dist/test-duck.js",
+    "rewrite": "node --experimental-strip-types dist/tools/query-rewriter.js",
+    "lint": "pnpm eslint . --ext .ts",
+    "lint:fix": "pnpm eslint . --ext .ts --fix",
+    "serve": "node --experimental-strip-types dist/server.js",
+    "eval": "node --experimental-strip-types dist/evals/batch-evals.js",
     "tsc:fix": "pnpm ts-fix --tsconfig ./tsconfig.json --ignoreGitStatus --write",
-    "test": "jest --testTimeout=30000",
-    "test:watch": "jest --watch"
+    "test": "pnpm jest --testTimeout=30000",
+    "test:watch": "pnpm jest --watch"
   },
-  "keywords": [],
   "author": "Jina AI",
   "license": "Apache-2.0",
   "description": "",
   "type": "module",
   "imports": {
-    "#src/*.js": "./src/*.ts"
+    "#src/*.js": {
+      "development": "./src/*.ts",
+      "production": "./src/*.ts",
+      "import": "./dist/*.js"
+    }
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "^2.1.12",
     "@google-cloud/firestore": "^7.11.0",
     "@google-cloud/storage": "^7.15.1",
-    "node-deepresearch": "workspace:^",
+    "@piktur/node-deepresearch": "workspace:^",
+    "express": "catalog:",
     "civkit": "^0.8.3-15926cb",
     "dayjs": "^1.11.13",
+    "cors": "catalog:",
     "lodash": "^4.17.21",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.8.0"

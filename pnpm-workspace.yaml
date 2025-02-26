@@ -1,2 +1,6 @@
 packages:
   - "packages/*"
+catalog:
+  express: 4.21.2
+  '@types/express': 5.0.0
+  cors: 2.8.5

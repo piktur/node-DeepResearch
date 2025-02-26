@@ -1,7 +1,7 @@
 import { jinaAiMiddleware } from "#src/patch-express.js";
+import app from "@piktur/node-deepresearch/app.js";
 import express from "express";
 import { Server } from "http";
-import app from "node-deepresearch/index.js";
 import "reflect-metadata";
 
 const rootApp = express();

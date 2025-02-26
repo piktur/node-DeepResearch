@@ -5,7 +5,6 @@
     "moduleResolution": "NodeNext",
     "composite": true,
     "incremental": true,
-    "noEmit": false,
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
@@ -23,8 +22,15 @@
     "isolatedDeclarations": false,
     "preserveSymlinks": false,
     "verbatimModuleSyntax": true,
-    "customConditions": ["development"]
+    "customConditions": ["development"],
+    "allowArbitraryExtensions": true,
+    "types": [],
+    "typeRoots": [
+      "./src",
+      "./node_modules",
+      "./node_modules/@types"
+    ],
   },
-  "include": ["src/**/*.ts", "src/**/*.json"],
-  "exclude": ["src/**/__tests__/**"]
+  "include": ["./src/**/*.ts", "./src/**/*.json"],
+  "exclude": ["./src/**/__tests__/**"]
 }
