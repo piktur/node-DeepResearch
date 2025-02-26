@@ -11,7 +11,15 @@ interface ActionState {
 
 export class ActionTracker extends EventEmitter {
   private state: ActionState = {
-    thisStep: { action: "answer", answer: "", references: [], question: "", think: "", totalStep: 0, isFinal: false },
+    thisStep: {
+      action: "answer",
+      answer: "",
+      references: [],
+      question: "",
+      think: "",
+      totalStep: 0,
+      isFinal: false,
+    },
     gaps: [],
     badAttempts: 0,
     totalStep: 0,
@@ -36,7 +44,15 @@ export class ActionTracker extends EventEmitter {
 
   reset() {
     this.state = {
-      thisStep: { action: "answer", answer: "", references: [], think: "", question:"", isFinal: false, totalStep: 0 },
+      thisStep: {
+        action: "answer",
+        answer: "",
+        references: [],
+        think: "",
+        question: "",
+        isFinal: false,
+        totalStep: 0,
+      },
       gaps: [],
       badAttempts: 0,
       totalStep: 0,

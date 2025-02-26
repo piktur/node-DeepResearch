@@ -152,107 +152,117 @@ describe("/v1/chat/completions", () => {
           stream: true,
         })
         .buffer(true)
-        .parse((res: unknown, callback: (arg0: Error | null, arg1: string | null) => void) => {
-          const response = res as unknown as {
-            on(event: "data", listener: (chunk: Buffer) => void): void;
-            on(event: "end", listener: () => void): void;
-            on(event: "error", listener: (err: Error) => void): void;
-          };
-          let responseData = "";
+        .parse(
+          (
+            res: unknown,
+            callback: (arg0: Error | null, arg1: string | null) => void,
+          ) => {
+            const response = res as unknown as {
+              on(event: "data", listener: (chunk: Buffer) => void): void;
+              on(event: "end", listener: () => void): void;
+              on(event: "error", listener: (err: Error) => void): void;
+            };
+            let responseData = "";
 
-          response.on("error", (err) => {
-            cleanup();
-            callback(err, null);
-          });
-
-          response.on("data", (chunk) => {
-            responseData += chunk.toString();
-          });
-
-          response.on("end", () => {
-            try {
-              callback(null, responseData);
-            } catch (err) {
+            response.on("error", (err) => {
               cleanup();
-              callback(
-                err instanceof Error ? err : new Error(String(err)),
-                null,
-              );
-            }
-          });
-        })
-        .end((err: any, res: { status: any; headers: { [x: string]: any; }; body: string; }) => {
-          if (err) return reject(err);
+              callback(err, null);
+            });
 
-          expect(res.status).toBe(200);
-          expect(res.headers["content-type"]).toBe("text/event-stream");
+            response.on("data", (chunk) => {
+              responseData += chunk.toString();
+            });
 
-          // Verify stream format and content
-          if (isDone) return; // Prevent multiple resolves
+            response.on("end", () => {
+              try {
+                callback(null, responseData);
+              } catch (err) {
+                cleanup();
+                callback(
+                  err instanceof Error ? err : new Error(String(err)),
+                  null,
+                );
+              }
+            });
+          },
+        )
+        .end(
+          (
+            err: any,
+            res: { status: any; headers: { [x: string]: any }; body: string },
+          ) => {
+            if (err) return reject(err);
 
-          const responseText = res.body as string;
-          const chunks = responseText
-            .split("\n\n")
-            .filter((line: string) => line.startsWith("data: "))
-            .map((line: string) => JSON.parse(line.replace("data: ", "")));
+            expect(res.status).toBe(200);
+            expect(res.headers["content-type"]).toBe("text/event-stream");
 
-          // Process all chunks
-          expect(chunks.length).toBeGreaterThan(0);
+            // Verify stream format and content
+            if (isDone) return; // Prevent multiple resolves
 
-          // Verify initial chunk format
-          expect(chunks[0]).toMatchObject({
-            id: expect.any(String),
-            object: "chat.completion.chunk",
-            choices: [
-              {
-                index: 0,
-                delta: { role: "assistant" },
-                logprobs: null,
-                finish_reason: null,
-              },
-            ],
-          });
+            const responseText = res.body as string;
+            const chunks = responseText
+              .split("\n\n")
+              .filter((line: string) => line.startsWith("data: "))
+              .map((line: string) => JSON.parse(line.replace("data: ", "")));
 
-          // Verify content chunks have content
-          chunks.slice(1).forEach((chunk) => {
-            const content = chunk.choices[0].delta.content;
-            if (content && content.trim()) {
-              totalCompletionTokens += 1; // Count 1 token per chunk as per Vercel convention
-            }
-            expect(chunk).toMatchObject({
+            // Process all chunks
+            expect(chunks.length).toBeGreaterThan(0);
+
+            // Verify initial chunk format
+            expect(chunks[0]).toMatchObject({
+              id: expect.any(String),
               object: "chat.completion.chunk",
               choices: [
                 {
-                  delta: expect.objectContaining({
-                    content: expect.any(String),
-                  }),
+                  index: 0,
+                  delta: { role: "assistant" },
+                  logprobs: null,
+                  finish_reason: null,
                 },
               ],
             });
-          });
 
-          // Verify final chunk format if present
-          const lastChunk = chunks[chunks.length - 1];
-          if (lastChunk?.choices?.[0]?.finish_reason === "stop") {
-            expect(lastChunk).toMatchObject({
-              object: "chat.completion.chunk",
-              choices: [
-                {
-                  delta: {},
-                  finish_reason: "stop",
-                },
-              ],
+            // Verify content chunks have content
+            chunks.slice(1).forEach((chunk) => {
+              const content = chunk.choices[0].delta.content;
+              if (content && content.trim()) {
+                totalCompletionTokens += 1; // Count 1 token per chunk as per Vercel convention
+              }
+              expect(chunk).toMatchObject({
+                object: "chat.completion.chunk",
+                choices: [
+                  {
+                    delta: expect.objectContaining({
+                      content: expect.any(String),
+                    }),
+                  },
+                ],
+              });
             });
-          }
 
-          // Verify we tracked some completion tokens
-          expect(totalCompletionTokens).toBeGreaterThan(0);
+            // Verify final chunk format if present
+            const lastChunk = chunks[chunks.length - 1];
+            if (lastChunk?.choices?.[0]?.finish_reason === "stop") {
+              expect(lastChunk).toMatchObject({
+                object: "chat.completion.chunk",
+                choices: [
+                  {
+                    delta: {},
+                    finish_reason: "stop",
+                  },
+                ],
+              });
+            }
 
-          // Clean up and resolve
-          if (!isDone) {
-            cleanup();
-          }
-        });
+            // Verify we tracked some completion tokens
+            expect(totalCompletionTokens).toBeGreaterThan(0);
+
+            // Clean up and resolve
+            if (!isDone) {
+              cleanup();
+            }
+          },
+        );
     });
   });
 

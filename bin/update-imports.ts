@@ -1,26 +1,23 @@
 #!/usr/bin/env node --experimental-strip-types
 
-import * as path from 'path';
-import { Project } from 'ts-morph';
+import * as path from "path";
+import { Project } from "ts-morph";
 
- // Define the packages to process
-const packages = [
-  'packages/node-deepresearch',
-  'packages/jina-ai'
-];
+// Define the packages to process
+const packages = ["packages/node-deepresearch", "packages/jina-ai"];
 
 // Process each package
 for (const packagePath of packages) {
   console.log(`Processing package: ${packagePath}`);
 
   const project = new Project({
-    tsConfigFilePath: path.join(packagePath, 'tsconfig.json'),
+    tsConfigFilePath: path.join(packagePath, "tsconfig.json"),
   });
 
   // Add source files
   project.addSourceFilesAtPaths([
-    path.join(packagePath, 'src/**/*.ts'),
-    path.join(packagePath, 'src/**/*.js'),
+    path.join(packagePath, "src/**/*.ts"),
+    path.join(packagePath, "src/**/*.js"),
   ]);
 
   const sourceFiles = project.getSourceFiles();
@@ -38,12 +35,15 @@ for (const packagePath of packages) {
       const moduleSpecifier = importDecl.getModuleSpecifierValue();
 
       // Skip if it's not a relative import
-      if (!moduleSpecifier.startsWith('.')) {
+      if (!moduleSpecifier.startsWith(".")) {
         continue;
       }
 
       // Skip package.json imports
-      if (moduleSpecifier.includes('package.json') || moduleSpecifier.includes('config.json')) {
+      if (
+        moduleSpecifier.includes("package.json") ||
+        moduleSpecifier.includes("config.json")
+      ) {
         continue;
       }
 
@@ -54,17 +54,17 @@ for (const packagePath of packages) {
       const resolvedPath = path.resolve(sourceFileDir, moduleSpecifier);
 
       // Get the path relative to the src directory
-      const srcDir = path.join(packagePath, 'src');
+      const srcDir = path.join(packagePath, "src");
       let relativePath = path.relative(srcDir, resolvedPath);
 
       // Convert backslashes to forward slashes for consistency
-      relativePath = relativePath.replace(/\\/g, '/');
+      relativePath = relativePath.replace(/\\/g, "/");
 
       // Create the new import path with #src alias
       const newModuleSpecifier = `#src/${relativePath}`;
 
       // Add .js extension if not present
-      const finalModuleSpecifier = newModuleSpecifier.endsWith('.js')
+      const finalModuleSpecifier = newModuleSpecifier.endsWith(".js")
         ? newModuleSpecifier
         : `${newModuleSpecifier}.js`;
 
@@ -72,7 +72,9 @@ for (const packagePath of packages) {
       importDecl.setModuleSpecifier(finalModuleSpecifier);
       hasChanges = true;
 
-      console.log(`  Updated import: ${moduleSpecifier} -> ${finalModuleSpecifier}`);
+      console.log(
+        `  Updated import: ${moduleSpecifier} -> ${finalModuleSpecifier}`,
+      );
     }
 
     // Save the file if changes were made
@@ -83,4 +85,4 @@ for (const packagePath of packages) {
   }
 }
 
-console.log('Import transformation complete!');
+console.log("Import transformation complete!");

@@ -25,11 +25,6 @@
     "verbatimModuleSyntax": true,
     "customConditions": ["development"]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.json"
-  ],
-  "exclude": [
-    "src/**/__tests__/**"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.json"],
+  "exclude": ["src/**/__tests__/**"]
 }

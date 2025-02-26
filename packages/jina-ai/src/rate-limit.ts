@@ -108,7 +108,7 @@ export class RateLimitDesc extends AutoCastable {
 
 @singleton()
 export class RateLimitControl extends AsyncService {
-  logger!: GlobalLogger
+  logger!: GlobalLogger;
 
   constructor(protected globalLogger: GlobalLogger) {
     super(...arguments);

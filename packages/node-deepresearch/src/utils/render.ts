@@ -28,7 +28,7 @@ export function render(
   }
 
   const { answer, references } = lastResult;
-  const thoughts = 'thoughts' in lastResult ? lastResult.thoughts : ''
+  const thoughts = "thoughts" in lastResult ? lastResult.thoughts : "";
 
   let markdown: string = `# Report
 

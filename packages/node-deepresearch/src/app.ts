@@ -11,7 +11,12 @@ import type {
 import { ActionTracker } from "#src/utils/action-tracker.js";
 import { TokenTracker } from "#src/utils/token-tracker.js";
 import cors from "cors";
-import express, { type Express, type Request, type RequestHandler, type Response } from "express";
+import express, {
+  type Express,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from "express";
 
 const app: Express = express();
 

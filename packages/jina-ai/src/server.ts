@@ -1,9 +1,8 @@
 import { jinaAiMiddleware } from "#src/patch-express.js";
 import express from "express";
 import { Server } from "http";
+import app from "node-deepresearch/index.js";
 import "reflect-metadata";
-
-import app from 'node-deepresearch/index.js';
 
 const rootApp = express();
 rootApp.set("trust proxy", true);

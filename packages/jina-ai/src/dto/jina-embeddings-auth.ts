@@ -55,7 +55,7 @@ export class JinaWallet extends AutoCastable {
 export class JinaEmbeddingsTokenAccount extends FirestoreRecord {
   static override collectionName = "embeddingsTokenAccounts";
 
-  override _id: string = ''
+  override _id: string = "";
 
   @Prop({
     required: true,

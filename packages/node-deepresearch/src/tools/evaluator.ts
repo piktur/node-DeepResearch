@@ -1,9 +1,9 @@
 import type { GenerateObjectResult } from "ai";
 import type {
-    AnswerAction,
-    EvaluationResponse,
-    EvaluationType,
-    TrackerContext,
+  AnswerAction,
+  EvaluationResponse,
+  EvaluationType,
+  TrackerContext,
 } from "#src/types.js";
 import { ObjectGeneratorSafe } from "#src/utils/safe-generator.js";
 import { Schemas } from "#src/utils/schemas.js";

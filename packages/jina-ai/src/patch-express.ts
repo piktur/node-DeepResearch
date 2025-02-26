@@ -165,13 +165,11 @@ export const jinaAiMiddleware = (
       }
 
       const apiRoll = rateLimitControl.record(draftApiCall);
-      apiRoll
-        .save()
-        .catch((err) =>
-          logger.warn(`Failed to save rate limit record`, {
-            err: marshalErrorLike(err),
-          }),
-        );
+      apiRoll.save().catch((err) =>
+        logger.warn(`Failed to save rate limit record`, {
+          err: marshalErrorLike(err),
+        }),
+      );
 
       const pResClose = once(res, "close");
 
@@ -191,13 +189,11 @@ export const jinaAiMiddleware = (
         res.statusCode === 200
           ? API_CALL_STATUS.SUCCESS
           : API_CALL_STATUS.ERROR;
-      apiRoll
-        .save()
-        .catch((err) =>
-          logger.warn(`Failed to save rate limit record`, {
-            err: marshalErrorLike(err),
-          }),
-        );
+      apiRoll.save().catch((err) =>
+        logger.warn(`Failed to save rate limit record`, {
+          err: marshalErrorLike(err),
+        }),
+      );
       logger.info(
         `HTTP ${res.statusCode} for request ${ctx.traceId} after ${Date.now() - ctx.traceT0.valueOf()}ms`,
         {

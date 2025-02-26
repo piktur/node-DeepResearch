@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { generateObject, type LanguageModelUsage, NoObjectGeneratedError } from "ai";
+import {
+  generateObject,
+  type LanguageModelUsage,
+  NoObjectGeneratedError,
+} from "ai";
 import { TokenTracker } from "#src/utils/token-tracker.js";
 import { getModel, type ToolName, getToolConfig } from "#src/config.js";
 
