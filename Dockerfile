@@ -1,4 +1,4 @@
-FROM node:22.11.0-alpine AS base
+FROM node:22.14.0-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN npm install -g pnpm@9.12.2
@@ -18,9 +18,9 @@ ENV CI=1
 # Install dependencies
 # @note The secret MUST BE excluded from layer cache.
 # DO NOT attempt to export the variable in an earlier layer.
-RUN --mount=type=secret,id=node_auth_token \
+RUN --mount=type=secret,id=npm_token \
     --mount=type=cache,id=pnpm,target=/pnpm/store \
-    NODE_AUTH_TOKEN=$(cat /run/secrets/node_auth_token) \
+    NPM_TOKEN=$(cat /run/secrets/npm_token) \
     pnpm install \
         --frozen-lockfile \
         --ignore-scripts
@@ -28,14 +28,14 @@ RUN --mount=type=secret,id=node_auth_token \
 COPY . .
 
 # Build the application
-RUN --mount=type=secret,id=node_auth_token \
+RUN --mount=type=secret,id=npm_token \
     --mount=type=cache,id=pnpm,target=/pnpm/store \
-    NODE_AUTH_TOKEN=$(cat /run/secrets/node_auth_token) \
+    NPM_TOKEN=$(cat /run/secrets/npm_token) \
     pnpm deploy --no-optional --prod --filter=./packages/node-deepresearch /build/node-deepresearch && \
     pnpm run build && \
     mv packages/node-deepresearch/dist /build/node-deepresearch/dist
 
-FROM node:22.11.0-alpine AS production
+FROM node:22.14.0-alpine AS production
 COPY --from=builder /build/node-deepresearch /app
 WORKDIR /app
 ENV PORT=3000

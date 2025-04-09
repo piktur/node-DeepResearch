@@ -24,7 +24,8 @@
     "#src/*.js": {
       "development": "./src/*.ts",
       "production": "./src/*.ts",
-      "import": "./dist/*.js"
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
     },
     "#src/*.json": "./src/*.json"
   },
@@ -84,7 +85,7 @@
   },
   "packageManager": "pnpm@9.12.2",
   "engines": {
-    "node": "22.11.0",
+    "node": "22.14.0",
     "pnpm": "9.12.2"
   },
   "publishConfig": {

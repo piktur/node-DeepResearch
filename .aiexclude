@@ -1,0 +1,94 @@
+# Testing
+coverage/
+**/coverage/
+
+# Production
+build/
+dist/
+**/build/
+**/dist/
+
+# Misc
+*.pem
+
+# Debug
+npm-debug.log*
+
+.aider*
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v3
+
+# Local env files
+.env
+.env.*
+**/*.decrypt.*
+**/*.dec.*
+vault/
+**/vault/
+
+# Turborepo
+.turbo/
+**/.turbo/
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE-specific files
+.idea
+.vscode
+.ws-context
+
+# Logs
+logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+node_modules/
+**/node_modules/
+
+# Package manager locks
+.pnp
+.pnp.js
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# Sensitive files
+**/secrets.json
+**/credentials.json
+**/private-key.pem
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.iso
+
+# Database files
+*.sqlite
+*.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+
+**/ios/
+**/android/
+
+patches/
+**/tmp/
+
+.ws-context
+
+packages/finance/src/data/
