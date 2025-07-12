@@ -72,14 +72,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # researcher-production:
-  #   <<: *app
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     secrets:
-  #       - npm_token
-
 networks:
   host:
   local:
