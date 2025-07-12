@@ -16,26 +16,27 @@ x-app: &app
   networks:
     - host
     - local
-  ports:
-    - "3000:3000"
 
 services:
   researcher-cache-pnpm:
     image: ghcr.io/piktur/finance/devcontainers/base:debian
-    platform: linux/arm64
     user: root
+    profiles:
+      - devcontainer
+      - development
+      - init
     working_dir: /app
     environment:
       PNPM_HOME: /app/.pnpm-store
     secrets:
       - npm_token
     volumes:
-      - .:/app
+      - ${HOST_HOME}/Code/piktur/node-DeepResearch:/app
       - researcher_node_modules:/app/node_modules
       - npm:/root/.npm
-      - $PNPM_HOME/store/v3:/app/.pnpm-store
+      - ${PNPM_HOME}/store/v3:/app/.pnpm-store
       - pnpm:/app/.pnpm-store
-    command: /app/bin/pnpm/setup.sh
+    command: ["./bin/pnpm/setup.sh"]
 
   researcher-dev:
     <<: *app
@@ -43,32 +44,41 @@ services:
     user: node
     working_dir: /app/packages/node-deepresearch
     volumes:
-      - .:/app
+      - ${HOST_HOME}/Code/piktur/node-DeepResearch:/app
       - researcher_node_modules:/app/node_modules
+    entrypoint: "node"
 
   researcher-www:
     <<: *app
     image: node:22.14.0-slim
     user: node
+    profiles:
+      - devcontainer
+      - development
     working_dir: /app/packages/node-deepresearch
+    ports:
+      - "3017:3000"
     volumes:
-      - .:/app
+      - ${HOST_HOME}/Code/piktur/node-DeepResearch:/app
       - researcher_node_modules:/app/node_modules
     entrypoint: "node"
     command: ["./dist/server.js"]
     healthcheck:
-      test: ['CMD-SHELL', 'curl -fI http://0.0.0.0:3000/health']
-      interval: 5s
-      timeout: 5s
+      test: [
+        'CMD-SHELL',
+        "node -e 'fetch(\"http://localhost:3000/health\").then(res => process.exit(res.ok ? 0 : 1))'"
+      ]
+      interval: 10s
+      timeout: 10s
       retries: 3
 
-  researcher-production:
-    <<: *app
-    build:
-      context: .
-      dockerfile: Dockerfile
-      secrets:
-        - npm_token
+  # researcher-production:
+  #   <<: *app
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     secrets:
+  #       - npm_token
 
 networks:
   host:
@@ -77,3 +87,7 @@ networks:
 
 volumes:
   researcher_node_modules:
+
+secrets:
+  npm_token:
+    environment: NPM_TOKEN

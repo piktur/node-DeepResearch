@@ -1,0 +1,5 @@
+vault/*.yaml
+**/vault/*.yaml
+pnpm-lock.yaml
+deno.lock
+*.md
