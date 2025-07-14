@@ -8,7 +8,8 @@ mkdir -p "${PNPM_HOME}"
 
 chown -R "${USER_UID}":"${USER_GID}" "/app/node_modules"
 
-export NPM_TOKEN="$(cat /run/secrets/npm_token)"
+: "${NPM_TOKEN:=$(cat /run/secrets/npm_token)}"
+export NPM_TOKEN
 
 pnpm store prune --force || :
-pnpm install --ignore-scripts || pnpm install --ignore-scripts --force
+pnpm install --ignore-scripts || pnpm install --ignore-scripts --force || :

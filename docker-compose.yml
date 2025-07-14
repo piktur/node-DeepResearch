@@ -2,12 +2,13 @@ name: researcher
 
 x-app: &app
   environment:
-    - BRAVE_API_KEY=${BRAVE_API_KEY:-}
-    - DEFAULT_MODEL_NAME=${DEFAULT_MODEL_NAME:-}
-    - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-    - JINA_API_KEY=${JINA_API_KEY:-}
-    - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-    - SERPER_API_KEY=${SERPER_API_KEY:-}
+    NPM_TOKEN: ${NPM_TOKEN:-}
+    BRAVE_API_KEY: ${BRAVE_API_KEY:-}
+    DEFAULT_MODEL_NAME: ${DEFAULT_MODEL_NAME:-}
+    GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    JINA_API_KEY: ${JINA_API_KEY:-}
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    SERPER_API_KEY: ${SERPER_API_KEY:-}
   secrets:
     - npm_token
   depends_on:
