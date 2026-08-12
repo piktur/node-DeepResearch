@@ -149,3 +149,4 @@ feature/
 tmp/
 feature/
 tmp/
+.DS_Store

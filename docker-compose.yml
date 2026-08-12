@@ -23,9 +23,7 @@ services:
     image: ghcr.io/piktur/finance/devcontainers/base:debian
     user: root
     profiles:
-      - devcontainer
-      - development
-      - init
+      - dev
     working_dir: /app
     environment:
       PNPM_HOME: /app/.pnpm-store
@@ -44,8 +42,7 @@ services:
     image: node:22.14.0-slim
     user: node
     profiles:
-      - devcontainer
-      - development
+      - dev
     working_dir: /app/packages/node-deepresearch
     volumes:
       - ${HOST_HOME}/Code/piktur/node-DeepResearch:/app
@@ -57,8 +54,7 @@ services:
     image: node:22.14.0-slim
     user: node
     profiles:
-      - devcontainer
-      - development
+      - dev
     working_dir: /app/packages/node-deepresearch
     ports:
       - "3017:3000"
